@@ -229,7 +229,7 @@ class CreatorDetailSheet extends StatelessWidget {
 
   void _shareCreator(BuildContext context) async {
     try {
-      final encodedName = Uri.encodeComponent(creator.name);
+      final encodedName = Uri.encodeComponent(creator.name).toLowerCase();
       final shareUrl = 'https://cf21.nnt.gg/?creator=$encodedName';
       
       // Copy to clipboard

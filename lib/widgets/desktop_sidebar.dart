@@ -126,9 +126,13 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
 
           // Content section
           Expanded(
-            child: widget.selectedCreator != null && !_showSearchList
-              ? _buildCreatorDetail(context, theme)
-              : _buildCreatorList(context, theme),
+            child: IndexedStack(
+              index: widget.selectedCreator != null && !_showSearchList ? 0 : 1,
+              children: [
+                _buildCreatorDetail(context, theme),
+                _buildCreatorList(context, theme),
+              ],
+            ),
           ),
         ],
       ),
@@ -335,7 +339,10 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   }
 
   Widget _buildCreatorDetail(BuildContext context, ThemeData theme) {
-    final creator = widget.selectedCreator!;
+    final creator = widget.selectedCreator;
+    if (creator == null) {
+      return const SizedBox.shrink();
+    }
     
     return SingleChildScrollView(
       child: Padding(
@@ -490,8 +497,11 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   }
 
   void _shareCreator(BuildContext context) async {
+    final creator = widget.selectedCreator;
+    if (creator == null) return;
+    
     try {
-      final encodedName = Uri.encodeComponent(widget.selectedCreator!.name);
+      final encodedName = Uri.encodeComponent(creator.name).toLowerCase();
       final shareUrl = 'https://cf21.nnt.gg/?creator=$encodedName';
       
       await Clipboard.setData(ClipboardData(text: shareUrl));
@@ -505,7 +515,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
               const Icon(Icons.check_circle, color: Colors.white),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('Link copied: ${widget.selectedCreator!.name}'),
+                child: Text('Link copied: ${creator.name}'),
               ),
             ],
           ),
