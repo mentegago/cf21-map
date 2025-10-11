@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:html' as html;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 import '../models/creator.dart';
 import 'creator_avatar.dart';
 
@@ -21,7 +22,7 @@ class CreatorDetailSheet extends StatelessWidget {
     return DraggableScrollableSheet(
       initialChildSize: 0.35,
       minChildSize: 0.25,
-      maxChildSize: 1.0,
+      maxChildSize: 0.9,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -165,7 +166,7 @@ class CreatorDetailSheet extends StatelessWidget {
                                 label: Text(link.title.isNotEmpty ? link.title : link.url),
                                 onPressed: () {
                                   try {
-                                    html.window.open(link.url, '_blank');
+                                    launchUrl(Uri.parse(link.url), mode: LaunchMode.externalApplication);
                                   } catch (_) {}
                                 },
                                 backgroundColor: theme.colorScheme.primaryContainer,
@@ -226,19 +227,15 @@ class CreatorDetailSheet extends StatelessWidget {
     }
   }
 
-  void _shareCreator(BuildContext context) {
+  void _shareCreator(BuildContext context) async {
     try {
-      // Get current URL without query params
-      final uri = Uri.parse(html.window.location.href);
-      final portPart = (uri.hasPort && uri.port != 80 && uri.port != 443) ? ':${uri.port}' : '';
-      final baseUrl = '${uri.scheme}://${uri.host}$portPart${uri.path}';
-      
-      // Create URL with creator parameter
       final encodedName = Uri.encodeComponent(creator.name);
-      final shareUrl = '$baseUrl?creator=$encodedName';
+      final shareUrl = 'https://cf21.nnt.gg/?creator=$encodedName';
       
       // Copy to clipboard
-      html.window.navigator.clipboard?.writeText(shareUrl);
+      await Clipboard.setData(ClipboardData(text: shareUrl));
+
+      if(!context.mounted) return;
       
       // Show confirmation
       ScaffoldMessenger.of(context).showSnackBar(
