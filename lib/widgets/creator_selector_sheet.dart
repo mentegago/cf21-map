@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/creator.dart';
+import 'creator_avatar.dart';
 
 class CreatorSelectorSheet extends StatelessWidget {
   final String boothId;
@@ -85,18 +86,8 @@ class CreatorSelectorSheet extends StatelessWidget {
                 return a.name.toLowerCase().compareTo(b.name.toLowerCase());
               });
               final creator = sorted[index];
-              final section = _getBoothSection(creator);
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: _getSectionColor(section),
-                  child: Text(
-                    section,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                leading: CreatorAvatar(creator: creator),
                 title: Text(
                   creator.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
@@ -118,31 +109,6 @@ class CreatorSelectorSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _getBoothSection(Creator creator) {
-    if (creator.booths.isEmpty) return '?';
-    final firstBooth = creator.booths.first;
-    final hyphen = firstBooth.indexOf('-');
-    if (hyphen > 0) {
-      return firstBooth.substring(0, hyphen).toUpperCase();
-    }
-    return firstBooth.isNotEmpty ? firstBooth.substring(0, 1).toUpperCase() : '?';
-  }
-
-  Color _getSectionColor(String section) {
-    final List<Color> palette = const [
-      Color(0xFF1976D2), // blue 700
-      Color(0xFF388E3C), // green 600
-      Color(0xFFEF6C00), // orange 800
-      Color(0xFF7B1FA2), // purple 700
-      Color(0xFFD32F2F), // red 700
-      Color(0xFF00838F), // cyan 800
-      Color(0xFF558B2F), // light green 700
-      Color(0xFFFF8F00), // amber 800
-    ];
-    final idx = section.codeUnitAt(0) % palette.length;
-    return palette[idx];
   }
 }
 

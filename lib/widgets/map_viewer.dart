@@ -38,6 +38,31 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+    
+    // Set initial zoom and position after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      // Get viewport size
+      final viewportWidth = MediaQuery.of(context).size.width;
+      final viewportHeight = MediaQuery.of(context).size.height;
+      
+      // Calculate map size
+      final mapWidth = widget.cols * _cellSize;
+      final mapHeight = widget.rows * _cellSize;
+      
+      // Set initial scale (e.g., 0.5 to zoom out, 1.0 for default, 2.0 to zoom in)
+      const initialScale = 0.5;
+      
+      // Center the map with the initial scale
+      final translationX = (viewportWidth - mapWidth * initialScale) / 1.3;
+      final translationY = (viewportHeight - mapHeight * initialScale) / 1.3;
+      
+      // Create initial transformation
+      _transformationController.value = Matrix4.identity()
+        ..translate(translationX, translationY)
+        ..scale(initialScale);
+    });
   }
 
   @override

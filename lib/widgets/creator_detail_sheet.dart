@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import '../models/creator.dart';
+import 'creator_avatar.dart';
 
 class CreatorDetailSheet extends StatelessWidget {
   final Creator creator;
@@ -20,7 +21,7 @@ class CreatorDetailSheet extends StatelessWidget {
     return DraggableScrollableSheet(
       initialChildSize: 0.35,
       minChildSize: 0.25,
-      maxChildSize: 0.6,
+      maxChildSize: 1.0,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -28,7 +29,7 @@ class CreatorDetailSheet extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.2),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -44,7 +45,7 @@ class CreatorDetailSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -55,17 +56,7 @@ class CreatorDetailSheet extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: _getSectionColor(_getBoothSection(creator)),
-                      radius: 20,
-                      child: Text(
-                        _getBoothSection(creator),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    CreatorAvatar(creator: creator),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -85,7 +76,7 @@ class CreatorDetailSheet extends StatelessWidget {
                             creator.boothsDisplay,
                             style: TextStyle(
                               fontSize: 14,
-                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -132,6 +123,58 @@ class CreatorDetailSheet extends StatelessWidget {
                         ),
                         
                         const SizedBox(height: 16),
+
+                        // Informations (optional) - each as its own section
+                        ...creator.informations.map((info) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                info.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                info.content,
+                                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        }),
+
+                        // URLs (optional)
+                        if (creator.urls.isNotEmpty) ...[
+                          const Text(
+                            'Links',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: creator.urls.map((link) {
+                              return ActionChip(
+                                avatar: const Icon(Icons.link, size: 18, weight: 1.5,),
+                                label: Text(link.title.isNotEmpty ? link.title : link.url),
+                                onPressed: () {
+                                  try {
+                                    html.window.open(link.url, '_blank');
+                                  } catch (_) {}
+                                },
+                                backgroundColor: theme.colorScheme.primaryContainer,
+                                side: BorderSide(color: theme.colorScheme.primary),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         
                         // Booths section
                         Text(
@@ -153,13 +196,8 @@ class CreatorDetailSheet extends StatelessWidget {
                               avatar: Icon(Icons.location_on, size: 18, color: theme.colorScheme.primary),
                               label: Text(
                                 booth,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
                               ),
-                              backgroundColor: theme.colorScheme.primaryContainer,
-                              side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.5)),
+                              backgroundColor: theme.colorScheme.surfaceContainerLow,
                             );
                           }).toList(),
                         ),
@@ -174,31 +212,6 @@ class CreatorDetailSheet extends StatelessWidget {
         },
       );
     }
-
-  String _getBoothSection(Creator creator) {
-    if (creator.booths.isEmpty) return '?';
-    final firstBooth = creator.booths.first;
-    final hyphen = firstBooth.indexOf('-');
-    if (hyphen > 0) {
-      return firstBooth.substring(0, hyphen).toUpperCase();
-    }
-    return firstBooth.isNotEmpty ? firstBooth.substring(0, 1).toUpperCase() : '?';
-  }
-
-  Color _getSectionColor(String section) {
-    final List<Color> palette = const [
-      Color(0xFF1976D2), // blue 700
-      Color(0xFF388E3C), // green 600
-      Color(0xFFEF6C00), // orange 800
-      Color(0xFF7B1FA2), // purple 700
-      Color(0xFFD32F2F), // red 700
-      Color(0xFF00838F), // cyan 800
-      Color(0xFF558B2F), // light green 700
-      Color(0xFFFF8F00), // amber 800
-    ];
-    final idx = section.codeUnitAt(0) % palette.length;
-    return palette[idx];
-  }
 
   Color _getDayColor(String day) {
     switch (day) {

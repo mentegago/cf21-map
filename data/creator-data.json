@@ -6574,7 +6574,28 @@
       "AB-37",
       "AB-38"
     ],
-    "day": "BOTH"
+    "day": "BOTH",
+    "profileImage": "assets/neginotomodachi.jpg",
+    "informations": [
+      {
+        "title": "Info",
+        "content": "Pengen ngerasain rasanya jadi 3D Vtuber/Vstreamer? Dateng aja ke booth kami demi mendapatkan kesempatan untuk mencicipi sistem 3D avatar tracking yang kami gunakan!"
+      },
+      {
+        "title": "About",
+        "content": "Negi no Tomodachi merupakan grup 3D Virtual Streamer yang aktif membuat konten seperti Virtual Reality, 3D Avatar, serta cover lagu."
+      },
+      {
+        "title": "Members",
+        "content": "ngeQ, tapiocaalice, Mentega Goreng, Maguroo, Cepp, dan Amika Rei."
+      }
+    ],
+    "urls": [
+      {
+        "title": "Website",
+        "url": "https://nnt.gg"
+      }
+    ]
   },
   {
     "name": "Nekiiru & junyjuny.art & H'art",
