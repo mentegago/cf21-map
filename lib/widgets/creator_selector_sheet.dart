@@ -15,10 +15,12 @@ class CreatorSelectorSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -29,7 +31,7 @@ class CreatorSelectorSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -51,7 +53,7 @@ class CreatorSelectorSheet extends StatelessWidget {
                   'Booth $boothId',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -60,12 +62,29 @@ class CreatorSelectorSheet extends StatelessWidget {
           
           const Divider(height: 1),
           
-          // Creator list
+          // Creator list (Saturday first, then Sunday, then Both/others)
           ListView.builder(
             shrinkWrap: true,
             itemCount: creators.length,
             itemBuilder: (context, index) {
-              final creator = creators[index];
+              final sorted = [...creators]..sort((a, b) {
+                int rank(String day) {
+                  switch (day.toUpperCase()) {
+                    case 'SAT':
+                      return 0;
+                    case 'SUN':
+                      return 1;
+                    case 'BOTH':
+                      return 2;
+                    default:
+                      return 3;
+                  }
+                }
+                final r = rank(a.day).compareTo(rank(b.day));
+                if (r != 0) return r;
+                return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+              });
+              final creator = sorted[index];
               final section = _getBoothSection(creator);
               return ListTile(
                 leading: CircleAvatar(

@@ -82,7 +82,8 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
     return !_hasSearched ? _filteredCreators.length + 1 : _filteredCreators.length;
   }
 
-  Widget _buildFeaturedCreatorTile() {
+  Widget _buildFeaturedCreatorTile(BuildContext context) {
+    final theme = Theme.of(context);
     // Find "Negi no Tomodachi"
     final featured = widget.creators.firstWhere(
       (c) => c.name.toLowerCase().contains('negi no tomodachi'),
@@ -101,7 +102,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
               letterSpacing: 0.5,
             ),
           ),
@@ -135,7 +136,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
             ),
             subtitle: Text(
               '${featured.boothsDisplay} • ${featured.dayDisplay}',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
             ),
             trailing: const Icon(Icons.location_on),
             onTap: () => _handleCreatorTap(featured),
@@ -148,7 +149,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
               letterSpacing: 0.5,
             ),
           ),
@@ -181,6 +182,9 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -189,11 +193,11 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
           child: IgnorePointer(
             ignoring: !_isExpanded,
             child: AnimatedOpacity(
-              opacity: _isExpanded ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
-                color: Colors.white,
-                child: SafeArea(
+          opacity: _isExpanded ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            color: theme.colorScheme.surface,
+            child: SafeArea(
                   child: Column(
                     children: [
                       const SizedBox(height: 80), // Space for search bar
@@ -205,11 +209,11 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              '${_filteredCreators.length} result${_filteredCreators.length == 1 ? '' : 's'}',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14,
-                              ),
+                          '${_filteredCreators.length} result${_filteredCreators.length == 1 ? '' : 's'}',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            fontSize: 14,
+                          ),
                             ),
                           ),
                         ),
@@ -219,17 +223,17 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                         child: _filteredCreators.isEmpty && _hasSearched
                             ? Center(
                                 child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'No results found',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.search_off, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No results found',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
                                   ],
                                 ),
                               )
@@ -238,11 +242,11 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                                 itemBuilder: (context, index) {
                                   // Show featured creator at top when no search query
                                   if (!_hasSearched && index == 0) {
-                                    return _buildFeaturedCreatorTile();
+                                    return _buildFeaturedCreatorTile(context);
                                   }
                                   final creatorIndex = !_hasSearched ? index - 1 : index;
                                   final creator = _filteredCreators[creatorIndex];
-                                  return _buildCreatorTile(creator);
+                                  return _buildCreatorTile(creator, context);
                                 },
                               ),
                       ),
@@ -260,20 +264,21 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
           right: 0,
           top: 0,
           child: SafeArea(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            child:         Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            // Neutral grey container like Google Maps search in dark mode
+            color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F0),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.5 : 0.08),
+                blurRadius: 8,
+                spreadRadius: 1,
+                offset: const Offset(0, 2),
               ),
+            ],
+          ),
               child: Row(
                 children: [
                   if (_isExpanded)
@@ -310,7 +315,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                   ),
                   if (_searchController.text.isNotEmpty && widget.onClear != null)
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                      icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withOpacity(0.5), size: 20),
                       onPressed: _handleClear,
                     )
                   else
@@ -324,7 +329,8 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
     );
   }
 
-  Widget _buildCreatorTile(Creator creator) {
+  Widget _buildCreatorTile(Creator creator, BuildContext context) {
+    final theme = Theme.of(context);
     final section = _getBoothSection(creator);
     return ListTile(
       leading: CircleAvatar(
@@ -340,7 +346,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
       ),
       subtitle: Text(
         '${creator.boothsDisplay} • ${creator.dayDisplay}',
-        style: TextStyle(color: Colors.grey.shade600),
+        style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
       ),
       trailing: const Icon(Icons.location_on),
       onTap: () => _handleCreatorTap(creator),

@@ -191,6 +191,8 @@ class _MapViewerState extends State<MapViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return InteractiveViewer(
       transformationController: _transformationController,
       minScale: 0.1,
@@ -217,6 +219,7 @@ class _MapViewerState extends State<MapViewer> {
                     mergedCells: widget.mergedCells,
                     cellSize: _cellSize,
                     highlightedBooths: widget.highlightedBooths,
+                    isDark: isDark,
                   ),
                 ),
               ),
@@ -231,6 +234,7 @@ class _MapViewerState extends State<MapViewer> {
                     painter: HoverOverlayPainter(
                       hoveredCell: _getHoveredCell(),
                       cellSize: _cellSize,
+                      isDark: isDark,
                     ),
                   ),
                 ),
@@ -247,11 +251,13 @@ class MapPainter extends CustomPainter {
   final List<MergedCell> mergedCells;
   final double cellSize;
   final List<String>? highlightedBooths;
+  final bool isDark;
 
   MapPainter({
     required this.mergedCells,
     required this.cellSize,
     this.highlightedBooths,
+    required this.isDark,
   });
 
   @override
@@ -259,7 +265,8 @@ class MapPainter extends CustomPainter {
     // Draw background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = const Color(0xFFF5F5F5),
+      // Darker navy background for dark mode
+      Paint()..color = isDark ? const Color(0xFF0A1B2A) : const Color(0xFFF5F5F5),
     );
 
     // Only draw text if zoomed in enough
@@ -386,16 +393,16 @@ class MapPainter extends CustomPainter {
     if (cell.isEmpty) {
       return Colors.transparent;
     } else if (cell.isBooth) {
-      // Light fill color per booth section
+      // Fill color per booth section
       final section = _getBoothSection(cell.content);
       return _boothFillColor(section);
     } else if (cell.isLocationMarker) {
       if (cell.content == 'a' || cell.content == 'b') {
-        return const Color(0xFFEEEEEE); // Colors.grey.shade200
+        return isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE);
       }
-      return const Color(0xFFFFE0B2); // Colors.orange.shade100
+      return isDark ? const Color(0xFF4A2C00) : const Color(0xFFFFE0B2);
     }
-    return const Color(0xFFE0E0E0); // Colors.grey.shade300
+    return isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
   }
 
   Color _getBorderColor(MergedCell cell) {
@@ -406,30 +413,31 @@ class MapPainter extends CustomPainter {
       return _boothBorderColor(section);
     } else if (cell.isLocationMarker) {
       if (cell.content == 'a' || cell.content == 'b') {
-        return const Color(0xFFBDBDBD); // Colors.grey.shade400
+        return isDark ? const Color(0xFF4A4A4A) : const Color(0xFFBDBDBD);
       }
-      return const Color(0xFFE64A19); // Colors.orange.shade700
+      return isDark ? const Color(0xFFFF8A50) : const Color(0xFFE64A19);
     }
-    return const Color(0xFF9E9E9E); // Colors.grey.shade500
+    return isDark ? const Color(0xFF4A4A4A) : const Color(0xFF9E9E9E);
   }
 
   TextStyle _getTextStyle(MergedCell cell) {
     if (cell.isBooth) {
-      return const TextStyle(
+      return TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF0D47A1), // Colors.blue.shade900
+        // Use white in dark mode for maximum contrast across section fills
+        color: isDark ? Colors.white : const Color(0xFF0D47A1),
       );
     } else if (cell.isLocationMarker && cell.content != 'a' && cell.content != 'b') {
-      return const TextStyle(
+      return TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: Color(0xFFE65100), // Colors.orange.shade900
+        color: isDark ? const Color(0xFFFFB74D) : const Color(0xFFE65100),
       );
     }
-    return const TextStyle(
+    return TextStyle(
       fontSize: 14,
-      color: Colors.grey,
+      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
     );
   }
 
@@ -443,9 +451,9 @@ class MapPainter extends CustomPainter {
     return content.isNotEmpty ? content.substring(0, 1).toUpperCase() : 'X';
   }
 
-  // Soft, readable pastel fills per section group
+  // Soft, readable fills per section group (adapts to theme)
   Color _boothFillColor(String section) {
-    List<Color> palette = const [
+    List<Color> lightPalette = const [
       Color(0xFFE3F2FD), // blue 50
       Color(0xFFE8F5E9), // green 50
       Color(0xFFFFF3E0), // orange 50
@@ -455,11 +463,40 @@ class MapPainter extends CustomPainter {
       Color(0xFFF1F8E9), // light green 50
       Color(0xFFFFF8E1), // amber 50
     ];
+    List<Color> darkPalette = const [
+      Color(0xFF1A237E), // blue 900
+      Color(0xFF1B5E20), // green 900
+      Color(0xFFE65100), // orange 900
+      Color(0xFF4A148C), // purple 900
+      Color(0xFFB71C1C), // red 900
+      Color(0xFF006064), // cyan 900
+      Color(0xFF33691E), // light green 900
+      Color(0xFFFF6F00), // amber 900
+    ];
+    final palette = isDark ? darkPalette : lightPalette;
+
+    // Special-case readability in dark mode:
+    // Sections 'O' and 'G' previously mapped to amber/orange which had poor contrast.
+    if (isDark) {
+      if (section == 'O') {
+        return const Color(0xFF5E35B1); // deepPurple 600
+      }
+      if (section == 'G') {
+        return const Color(0xFF00897B); // teal 600
+      }
+    }
+
     final idx = section.codeUnitAt(0) % palette.length;
     return palette[idx];
   }
 
   Color _boothBorderColor(String section) {
+    // Adjust borders for special dark-mode overrides to keep harmony
+    if (isDark) {
+      if (section == 'O') return const Color(0xFF7E57C2); // deepPurple 400
+      if (section == 'G') return const Color(0xFF26A69A); // teal 400
+    }
+
     List<Color> palette = const [
       Color(0xFF1976D2), // blue 700
       Color(0xFF388E3C), // green 600
@@ -476,10 +513,11 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(MapPainter oldDelegate) {
-    // Only repaint if cellSize, data, or highlighted booths changed
+    // Only repaint if cellSize, data, highlighted booths, or theme changed
     final shouldRepaint = oldDelegate.cellSize != cellSize ||
         oldDelegate.mergedCells != mergedCells ||
-        oldDelegate.highlightedBooths != highlightedBooths;
+        oldDelegate.highlightedBooths != highlightedBooths ||
+        oldDelegate.isDark != isDark;
     return shouldRepaint;
   }
 }
@@ -488,10 +526,12 @@ class MapPainter extends CustomPainter {
 class HoverOverlayPainter extends CustomPainter {
   final MergedCell? hoveredCell;
   final double cellSize;
+  final bool isDark;
 
   HoverOverlayPainter({
     required this.hoveredCell,
     required this.cellSize,
+    required this.isDark,
   });
 
   @override
@@ -509,7 +549,9 @@ class HoverOverlayPainter extends CustomPainter {
     // Draw hover fill
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = const Color(0x80E3F2FD); // Semi-transparent light blue
+      ..color = isDark 
+          ? const Color(0x40BBDEFB) // Semi-transparent light blue for dark mode
+          : const Color(0x80E3F2FD); // Semi-transparent light blue for light mode
     
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(2)),
@@ -519,7 +561,9 @@ class HoverOverlayPainter extends CustomPainter {
     // Draw hover border
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..color = const Color(0xFF2196F3)
+      ..color = isDark 
+          ? const Color(0xFF64B5F6) // Lighter blue for dark mode
+          : const Color(0xFF2196F3)
       ..strokeWidth = 2.0;
     
     canvas.drawRRect(
@@ -530,7 +574,7 @@ class HoverOverlayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(HoverOverlayPainter oldDelegate) {
-    return oldDelegate.hoveredCell != hoveredCell;
+    return oldDelegate.hoveredCell != hoveredCell || oldDelegate.isDark != isDark;
   }
 }
 

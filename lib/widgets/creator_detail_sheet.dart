@@ -14,6 +14,9 @@ class CreatorDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return DraggableScrollableSheet(
       initialChildSize: 0.35,
       minChildSize: 0.25,
@@ -21,11 +24,11 @@ class CreatorDetailSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -41,7 +44,7 @@ class CreatorDetailSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: theme.colorScheme.onSurface.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -82,7 +85,7 @@ class CreatorDetailSheet extends StatelessWidget {
                             creator.boothsDisplay,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade600,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -147,7 +150,7 @@ class CreatorDetailSheet extends StatelessWidget {
                           runSpacing: 8,
                           children: creator.booths.map((booth) {
                             return Chip(
-                              avatar: const Icon(Icons.location_on, size: 18),
+                              avatar: Icon(Icons.location_on, size: 18, color: theme.colorScheme.primary),
                               label: Text(
                                 booth,
                                 style: const TextStyle(
@@ -155,8 +158,8 @@ class CreatorDetailSheet extends StatelessWidget {
                                   fontSize: 14,
                                 ),
                               ),
-                              backgroundColor: Colors.blue.shade50,
-                              side: BorderSide(color: Colors.blue.shade300),
+                              backgroundColor: theme.colorScheme.primaryContainer,
+                              side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.5)),
                             );
                           }).toList(),
                         ),
