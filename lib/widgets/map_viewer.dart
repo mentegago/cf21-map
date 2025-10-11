@@ -225,12 +225,13 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
     
     return InteractiveViewer(
       transformationController: _transformationController,
       minScale: 0.1,
       maxScale: 10.0,
-      boundaryMargin: const EdgeInsets.all(double.infinity),
+      boundaryMargin: const EdgeInsets.symmetric(horizontal: 200, vertical: 400),
       constrained: false,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -253,6 +254,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
                     cellSize: _cellSize,
                     highlightedBooths: widget.highlightedBooths,
                     isDark: isDark,
+                    scaffoldBackgroundColor: scaffoldBackgroundColor,
                   ),
                 ),
               ),
@@ -285,12 +287,14 @@ class MapPainter extends CustomPainter {
   final double cellSize;
   final List<String>? highlightedBooths;
   final bool isDark;
+  final Color scaffoldBackgroundColor;
 
   MapPainter({
     required this.mergedCells,
     required this.cellSize,
     this.highlightedBooths,
     required this.isDark,
+    required this.scaffoldBackgroundColor,
   });
 
   @override
@@ -298,8 +302,8 @@ class MapPainter extends CustomPainter {
     // Draw background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      // Darker navy background for dark mode
-      Paint()..color = isDark ? const Color(0xFF0A1B2A) : const Color(0xFFF5F5F5),
+      // Dark mode navy, light mode greyish background to improve contrast
+      Paint()..color = scaffoldBackgroundColor,
     );
 
     // Only draw text if zoomed in enough
@@ -346,7 +350,7 @@ class MapPainter extends CustomPainter {
       double strokeWidth = (cell.isBooth ? 1.4 : 0.9) * zoomScale;
       if (isHighlighted) {
         // Bright yellow in dark mode, deep blue in light mode
-        borderColor = isDark ? const Color.fromARGB(255, 253, 173, 53) : const Color(0xFF0D47A1);
+        borderColor = isDark ? const Color.fromARGB(255, 253, 173, 53) : const Color.fromARGB(255, 116, 42, 0);
         strokeWidth = 3.0 * zoomScale;
       }
       borderPaint.color = borderColor;
@@ -367,7 +371,7 @@ class MapPainter extends CustomPainter {
           // White-ish overlay in dark mode, dark blue in light mode
           ..color = isDark 
               ? const Color.fromARGB(255, 255, 250, 180) // Semi-transparent white
-              : const Color(0x600D47A1); // Semi-transparent deep blue
+              : const Color.fromARGB(255, 255, 128, 9); // Semi-transparent deep blue
         if (useRoundedCorners) {
           canvas.drawRRect(
             RRect.fromRectAndRadius(rect, cornerRadius),

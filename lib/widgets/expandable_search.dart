@@ -267,9 +267,13 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
             child:         Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            // Neutral grey container like Google Maps search in dark mode
-            color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F0),
+            // White search bar in light mode, dark neutral in dark mode
+            color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
             borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+              width: 0.8,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(isDark ? 0.5 : 0.08),
@@ -304,7 +308,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                           controller: _searchController,
                           focusNode: _focusNode,
                           decoration: const InputDecoration(
-                            hintText: 'Search creators & booths...',
+                            hintText: 'Search CF21 creators...',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           ),

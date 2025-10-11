@@ -19,7 +19,7 @@ class CF21MapApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        scaffoldBackgroundColor: const Color.fromARGB(255, 247, 247, 247),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
