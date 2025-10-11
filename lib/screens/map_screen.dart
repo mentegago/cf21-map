@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
-import '../services/csv_parser.dart';
+import '../services/map_parser.dart';
 import '../widgets/map_viewer.dart';
 import '../widgets/creator_detail_sheet.dart';
 import '../widgets/expandable_search.dart';
@@ -59,8 +59,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       
       // Load map and creator data in parallel
       final results = await Future.wait([
-        CsvParser.loadMapData(),
-        CsvParser.loadCreatorData(),
+        MapParser.loadMapData(),
+        MapParser.loadCreatorData(),
       ]);
       
       final grid = results[0] as List<List<String>>;
@@ -69,7 +69,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       print('Data loaded in ${DateTime.now().difference(startTime).inMilliseconds}ms');
       
       final mergeStart = DateTime.now();
-      final merged = CsvParser.mergeCells(grid);
+      final merged = MapParser.mergeCells(grid);
       print('Cells merged in ${DateTime.now().difference(mergeStart).inMilliseconds}ms');
       print('Total cells: ${grid.length * (grid.isEmpty ? 0 : grid[0].length)}');
       print('Merged to: ${merged.length} cells');

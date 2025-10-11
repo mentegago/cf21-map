@@ -1,22 +1,16 @@
 import 'dart:convert';
-import 'package:csv/csv.dart';
 import 'package:flutter/services.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
 
-class CsvParser {
+class MapParser {
   static Future<List<List<String>>> loadMapData() async {
-    final csvString = await rootBundle.loadString('data/map.csv');
-    // Normalize line endings: replace CRLF with LF
-    final normalized = csvString.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    final List<List<dynamic>> csvData = const CsvToListConverter(
-      eol: '\n',
-      shouldParseNumbers: false,
-    ).convert(normalized);
+    final jsonString = await rootBundle.loadString('data/map.json');
+    final List<dynamic> jsonData = json.decode(jsonString);
     
     // Convert to String list
-    return csvData.map((row) => 
-      row.map((cell) => cell?.toString() ?? '').toList()
+    return jsonData.map<List<String>>((row) => 
+      (row as List<dynamic>).map<String>((cell) => cell?.toString() ?? '').toList()
     ).toList();
   }
   
