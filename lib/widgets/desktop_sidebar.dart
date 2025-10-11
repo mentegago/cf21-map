@@ -26,7 +26,6 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _searchScrollController = ScrollController();
-  final ScrollController _detailScrollController = ScrollController();
   List<Creator> _filteredCreators = [];
   bool _hasSearched = false;
   bool _showSearchList = true;
@@ -64,11 +63,11 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     _searchScrollController.dispose();
-    _detailScrollController.dispose();
     super.dispose();
   }
 
   void _performSearch(String query) {
+    _searchScrollController.jumpTo(0);
     setState(() {
       _hasSearched = query.isNotEmpty;
       if (query.isEmpty) {
@@ -127,15 +126,9 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
 
           // Content section
           Expanded(
-            child: IndexedStack(
-              index: _showSearchList ? 0 : 1,
-              children: [
-                _buildCreatorList(context, theme),
-                widget.selectedCreator != null 
-                    ? _buildCreatorDetail(context, theme)
-                    : _buildCreatorList(context, theme),
-              ],
-            ),
+            child: widget.selectedCreator != null && !_showSearchList
+              ? _buildCreatorDetail(context, theme)
+              : _buildCreatorList(context, theme),
           ),
         ],
       ),
@@ -195,11 +188,8 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
               icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
               onPressed: () {
                 _searchController.clear();
+                widget.onClear?.call();
                 _performSearch('');
-                // Also unselect booth if one is selected
-                if (widget.selectedCreator != null) {
-                  widget.onClear?.call();
-                }
               },
             )
           // Show close creator button if creator is selected
@@ -348,7 +338,6 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
     final creator = widget.selectedCreator!;
     
     return SingleChildScrollView(
-      controller: _detailScrollController,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

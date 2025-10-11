@@ -461,6 +461,9 @@ class MapPainter extends CustomPainter {
   Color _getCellColor(MergedCell cell) {
     if (cell.isEmpty) {
       return Colors.transparent;
+    } else if (cell.isWall) {
+      // Wall color - dark grey/black
+      return isDark ? const Color(0xFF1A1A1A) : const Color(0xFF424242);
     } else if (cell.isBooth) {
       // Fill color per booth section
       final section = _getBoothSection(cell.content);
@@ -477,6 +480,9 @@ class MapPainter extends CustomPainter {
   Color _getBorderColor(MergedCell cell) {
     if (cell.isEmpty) {
       return Colors.transparent;
+    } else if (cell.isWall) {
+      // Wall border - slightly lighter than fill
+      return isDark ? const Color(0xFF2A2A2A) : const Color(0xFF616161);
     } else if (cell.isBooth) {
       final section = _getBoothSection(cell.content);
       return _boothBorderColor(section);
@@ -490,7 +496,13 @@ class MapPainter extends CustomPainter {
   }
 
   TextStyle _getTextStyle(MergedCell cell, {bool isHighlighted = false}) {
-    if (cell.isBooth) {
+    if (cell.isWall) {
+      // Walls don't display text
+      return TextStyle(
+        fontSize: 0,
+        color: Colors.transparent,
+      );
+    } else if (cell.isBooth) {
       // When highlighted: dark text on bright/white overlay (dark mode), white text on dark blue (light mode)
       Color textColor;
       if (isHighlighted) {

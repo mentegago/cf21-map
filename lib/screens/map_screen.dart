@@ -222,7 +222,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             creators: _creators!,
             selectedCreator: _selectedCreator,
             onCreatorSelected: _handleCreatorSelected,
-            onClear: _selectedCreator != null ? _clearSelection : null,
+            onClear: _clearSelection,
           ),
         
         // Map viewer

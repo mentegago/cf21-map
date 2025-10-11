@@ -5,6 +5,7 @@ class MapCell {
   final bool isEmpty;
   final bool isBooth;
   final bool isLocationMarker;
+  final bool isWall;
   
   MapCell({
     required this.content,
@@ -12,7 +13,8 @@ class MapCell {
     required this.col,
   }) : isEmpty = content.trim().isEmpty,
        isBooth = _isBooth(content),
-       isLocationMarker = _isLocationMarker(content);
+       isLocationMarker = _isLocationMarker(content),
+       isWall = _isWall(content);
   
   static bool _isBooth(String content) {
     if (content.trim().isEmpty) return false;
@@ -23,7 +25,13 @@ class MapCell {
   static bool _isLocationMarker(String content) {
     if (content.trim().isEmpty) return false;
     // Location markers are single/double letters or just "a" or "b"
-    return !_isBooth(content) && content.trim().isNotEmpty;
+    return !_isBooth(content) && !_isWall(content) && content.trim().isNotEmpty;
+  }
+  
+  static bool _isWall(String content) {
+    if (content.trim().isEmpty) return false;
+    // Wall cells are marked with "X"
+    return content.trim() == 'X';
   }
   
   @override
@@ -39,6 +47,7 @@ class MergedCell {
   final bool isEmpty;
   final bool isBooth;
   final bool isLocationMarker;
+  final bool isWall;
   
   MergedCell({
     required this.content,
@@ -48,7 +57,8 @@ class MergedCell {
     required this.colSpan,
   }) : isEmpty = content.trim().isEmpty,
        isBooth = MapCell._isBooth(content),
-       isLocationMarker = MapCell._isLocationMarker(content);
+       isLocationMarker = MapCell._isLocationMarker(content),
+       isWall = MapCell._isWall(content);
   
   bool containsPosition(int row, int col) {
     return row >= startRow && 
