@@ -1,0 +1,83 @@
+import 'dart:convert';
+import 'package:csv/csv.dart';
+import 'package:flutter/services.dart';
+import '../models/map_cell.dart';
+import '../models/creator.dart';
+
+class CsvParser {
+  static Future<List<List<String>>> loadMapData() async {
+    final csvString = await rootBundle.loadString('data/map.csv');
+    final List<List<dynamic>> csvData = const CsvToListConverter().convert(csvString);
+    
+    // Convert to String list
+    return csvData.map((row) => 
+      row.map((cell) => cell?.toString() ?? '').toList()
+    ).toList();
+  }
+  
+  static List<MergedCell> mergeCells(List<List<String>> grid) {
+    final int rows = grid.length;
+    final int cols = grid.isEmpty ? 0 : grid[0].length;
+    
+    // Track which cells have been merged
+    final processed = List.generate(rows, (_) => List.generate(cols, (_) => false));
+    final List<MergedCell> mergedCells = [];
+    
+    for (int r = 0; r < rows; r++) {
+      for (int c = 0; c < cols; c++) {
+        if (processed[r][c]) continue;
+        
+        final content = grid[r][c].trim();
+        
+        // Find the extent of this merged cell
+        int rowSpan = 1;
+        int colSpan = 1;
+        
+        // Check how far right we can extend
+        while (c + colSpan < cols && 
+               !processed[r][c + colSpan] &&
+               grid[r][c + colSpan].trim() == content) {
+          colSpan++;
+        }
+        
+        // Check how far down we can extend (for each column in the span)
+        bool canExtendDown = true;
+        while (canExtendDown && r + rowSpan < rows) {
+          for (int dc = 0; dc < colSpan; dc++) {
+            if (processed[r + rowSpan][c + dc] ||
+                grid[r + rowSpan][c + dc].trim() != content) {
+              canExtendDown = false;
+              break;
+            }
+          }
+          if (canExtendDown) rowSpan++;
+        }
+        
+        // Mark all cells in this merged area as processed
+        for (int dr = 0; dr < rowSpan; dr++) {
+          for (int dc = 0; dc < colSpan; dc++) {
+            processed[r + dr][c + dc] = true;
+          }
+        }
+        
+        // Create merged cell
+        mergedCells.add(MergedCell(
+          content: content,
+          startRow: r,
+          startCol: c,
+          rowSpan: rowSpan,
+          colSpan: colSpan,
+        ));
+      }
+    }
+    
+    return mergedCells;
+  }
+  
+  static Future<List<Creator>> loadCreatorData() async {
+    final jsonString = await rootBundle.loadString('data/creator-data.json');
+    final List<dynamic> jsonData = json.decode(jsonString);
+    return jsonData.map((json) => Creator.fromJson(json)).toList();
+  }
+}
+
