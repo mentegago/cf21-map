@@ -5,6 +5,7 @@ import '../widgets/map_viewer.dart';
 import '../widgets/creator_detail_sheet.dart';
 import '../widgets/expandable_search.dart';
 import '../widgets/creator_selector_sheet.dart';
+import '../widgets/desktop_sidebar.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
 
@@ -175,6 +176,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 768; // Breakpoint for desktop layout
+
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -203,36 +207,68 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                     ),
                   ),
                 )
-              : Stack(
-                  children: [
-                    MapViewer(
-                      mergedCells: _mergedCells!,
-                      rows: _rows,
-                      cols: _cols,
-                      highlightedBooths: _highlightedBooths,
-                      onBoothTap: _handleBoothTap,
-                    ),
-                    
-                    // Creator detail panel (Google Maps style)
-                    if (_selectedCreator != null)
-                      SlideTransition(
-                        position: _detailSlideAnimation,
-                        child: CreatorDetailSheet(
-                          creator: _selectedCreator!,
-                          onClose: _clearSelection,
-                        ),
-                      ),
-                    
-                    // Expandable search (always visible)
-                    if (_creators != null)
-                      ExpandableSearch(
-                        creators: _creators!,
-                        onCreatorSelected: _handleCreatorSelected,
-                        onClear: _selectedCreator != null ? _clearSelection : null,
-                        selectedCreator: _selectedCreator,
-                      ),
-                  ],
-                ),
+              : isDesktop
+                  ? _buildDesktopLayout()
+                  : _buildMobileLayout(),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      children: [
+        // Left sidebar
+        if (_creators != null)
+          DesktopSidebar(
+            creators: _creators!,
+            selectedCreator: _selectedCreator,
+            onCreatorSelected: _handleCreatorSelected,
+            onClear: _selectedCreator != null ? _clearSelection : null,
+          ),
+        
+        // Map viewer
+        Expanded(
+          child: MapViewer(
+            mergedCells: _mergedCells!,
+            rows: _rows,
+            cols: _cols,
+            highlightedBooths: _highlightedBooths,
+            onBoothTap: _handleBoothTap,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return Stack(
+      children: [
+        MapViewer(
+          mergedCells: _mergedCells!,
+          rows: _rows,
+          cols: _cols,
+          highlightedBooths: _highlightedBooths,
+          onBoothTap: _handleBoothTap,
+        ),
+        
+        // Creator detail panel (Google Maps style)
+        if (_selectedCreator != null)
+          SlideTransition(
+            position: _detailSlideAnimation,
+            child: CreatorDetailSheet(
+              creator: _selectedCreator!,
+              onClose: _clearSelection,
+            ),
+          ),
+        
+        // Expandable search (always visible)
+        if (_creators != null)
+          ExpandableSearch(
+            creators: _creators!,
+            onCreatorSelected: _handleCreatorSelected,
+            onClear: _selectedCreator != null ? _clearSelection : null,
+            selectedCreator: _selectedCreator,
+          ),
+      ],
     );
   }
 }

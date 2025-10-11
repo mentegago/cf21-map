@@ -132,8 +132,13 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     final avgY = totalY / boothCells.length;
 
     // Get the viewport size
-    final viewportWidth = MediaQuery.of(context).size.width;
-    final viewportHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    // On desktop, account for sidebar width (400px)
+    final isDesktop = screenWidth > 768;
+    final viewportWidth = isDesktop ? screenWidth - 400 : screenWidth;
+    final viewportHeight = screenHeight;
 
     // Get the current transformation
     final currentTransform = _transformationController.value;
@@ -153,7 +158,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
 
     // Calculate the translation to center the booths with target zoom
     final translationX = viewportWidth / 2 - avgX * targetScale;
-    final translationY = viewportHeight / 3 - avgY * targetScale;
+    final translationY = viewportHeight / (isDesktop ? 2 : 3) - avgY * targetScale;
 
     // Create target transformation
     final targetTransform = Matrix4.identity()
