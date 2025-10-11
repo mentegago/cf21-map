@@ -7,7 +7,12 @@ import '../models/creator.dart';
 class CsvParser {
   static Future<List<List<String>>> loadMapData() async {
     final csvString = await rootBundle.loadString('data/map.csv');
-    final List<List<dynamic>> csvData = const CsvToListConverter().convert(csvString);
+    // Normalize line endings: replace CRLF with LF
+    final normalized = csvString.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final List<List<dynamic>> csvData = const CsvToListConverter(
+      eol: '\n',
+      shouldParseNumbers: false,
+    ).convert(normalized);
     
     // Convert to String list
     return csvData.map((row) => 
