@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:html' as html;
 import 'screens/map_screen.dart';
 
 void main() {
   runApp(const CF21MapApp());
-  _primeOfflineCache();
 }
 
 class CF21MapApp extends StatelessWidget {
@@ -37,16 +35,3 @@ class CF21MapApp extends StatelessWidget {
     );
   }
 }
-
-// Proactively cache all app assets for offline (PWA) after first load.
-void _primeOfflineCache() {
-  if (!kIsWeb) return;
-  try {
-    html.window.navigator.serviceWorker?.ready.then((_) {
-      html.window.navigator.serviceWorker?.controller?.postMessage('downloadOffline');
-    });
-  } catch (_) {
-    // Ignore if service worker is unavailable (e.g., debug mode)
-  }
-}
-

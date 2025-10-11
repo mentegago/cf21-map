@@ -25,7 +25,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   String? _error;
   List<String>? _highlightedBooths;
   Creator? _selectedCreator;
-  bool _shouldCenterOnHighlight = false;
   late AnimationController _detailAnimationController;
   late Animation<Offset> _detailSlideAnimation;
 
@@ -106,7 +105,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     setState(() {
       _selectedCreator = creator;
       _highlightedBooths = creator.booths;
-      _shouldCenterOnHighlight = fromSearch; // Only center if from search
     });
     _detailAnimationController.forward();
   }
@@ -213,7 +211,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                       cols: _cols,
                       highlightedBooths: _highlightedBooths,
                       onBoothTap: _handleBoothTap,
-                      shouldCenterOnHighlight: _shouldCenterOnHighlight,
                     ),
                     
                     // Creator detail panel (Google Maps style)

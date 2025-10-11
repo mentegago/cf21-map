@@ -8,7 +8,6 @@ class MapViewer extends StatefulWidget {
   final int cols;
   final List<String>? highlightedBooths;
   final Function(String?)? onBoothTap;
-  final bool shouldCenterOnHighlight;
 
   const MapViewer({
     super.key,
@@ -17,27 +16,33 @@ class MapViewer extends StatefulWidget {
     required this.cols,
     this.highlightedBooths,
     this.onBoothTap,
-    this.shouldCenterOnHighlight = true,
   });
 
   @override
   State<MapViewer> createState() => _MapViewerState();
 }
 
-class _MapViewerState extends State<MapViewer> {
+class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMixin {
   final TransformationController _transformationController = TransformationController();
   double _cellSize = 40.0;
   String? _hoveredBooth;
   late List<List<String?>> _boothLookupGrid; // O(1) spatial lookup
+  late AnimationController _animationController;
+  Animation<Matrix4>? _animation;
 
   @override
   void initState() {
     super.initState();
     _buildBoothLookupGrid();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     _transformationController.dispose();
     super.dispose();
   }
@@ -51,8 +56,8 @@ class _MapViewerState extends State<MapViewer> {
       _buildBoothLookupGrid();
     }
     
-    if (widget.shouldCenterOnHighlight &&
-        widget.highlightedBooths != oldWidget.highlightedBooths && 
+    // Always center on booths when highlighted booths change
+    if (widget.highlightedBooths != oldWidget.highlightedBooths && 
         widget.highlightedBooths != null && widget.highlightedBooths!.isNotEmpty) {
       _centerOnBooths(widget.highlightedBooths!);
     }
@@ -105,21 +110,49 @@ class _MapViewerState extends State<MapViewer> {
     final viewportWidth = MediaQuery.of(context).size.width;
     final viewportHeight = MediaQuery.of(context).size.height;
 
-    // Get the current scale from the transformation
+    // Get the current transformation
     final currentTransform = _transformationController.value;
-    final currentScale = currentTransform.getMaxScaleOnAxis();
+    
+    // Determine target zoom based on booth area
+    // Multi-letter areas (AA-AF) need more zoom out to see context
+    bool isMultiLetterArea = false;
+    if (boothCells.isNotEmpty) {
+      final firstBoothId = boothCells.first.content;
+      final hyphenIndex = firstBoothId.indexOf('-');
+      if (hyphenIndex > 0) {
+        final area = firstBoothId.substring(0, hyphenIndex);
+        isMultiLetterArea = area.length > 1;
+      }
+    }
+    final targetScale = isMultiLetterArea ? 0.5 : 0.8;
 
-    // Calculate the translation to center the booths (keeping current zoom)
-    final translationX = viewportWidth / 2 - avgX * currentScale;
-    final translationY = viewportHeight / 2 - avgY * currentScale;
+    // Calculate the translation to center the booths with target zoom
+    final translationX = viewportWidth / 2 - avgX * targetScale;
+    final translationY = viewportHeight / 3 - avgY * targetScale;
 
-    // Animate to the booths with current zoom level
-    final newTransform = Matrix4.identity()
+    // Create target transformation
+    final targetTransform = Matrix4.identity()
       ..translate(translationX, translationY)
-      ..scale(currentScale);
+      ..scale(targetScale);
 
-    setState(() {
-      _transformationController.value = newTransform;
+    // Animate from current to target transformation
+    _animation = Matrix4Tween(
+      begin: currentTransform,
+      end: targetTransform,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOutCubic,
+    ));
+
+    // Delay animation to let search panel finish closing
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      _animationController.reset();
+      _animationController.forward();
+
+      _animation!.addListener(() {
+        _transformationController.value = _animation!.value;
+      });
     });
   }
 
@@ -312,8 +345,8 @@ class MapPainter extends CustomPainter {
       final zoomScale = (cellSize / 40.0).clamp(0.8, 2.0);
       double strokeWidth = (cell.isBooth ? 1.4 : 0.9) * zoomScale;
       if (isHighlighted) {
-        // Strong indigo border to stand out from orange sections
-        borderColor = const Color(0xFF1565C0);
+        // Bright yellow in dark mode, deep blue in light mode
+        borderColor = isDark ? const Color.fromARGB(255, 253, 173, 53) : const Color(0xFF0D47A1);
         strokeWidth = 3.0 * zoomScale;
       }
       borderPaint.color = borderColor;
@@ -327,12 +360,14 @@ class MapPainter extends CustomPainter {
         canvas.drawRect(rect, borderPaint);
       }
 
-      // Subtle highlight overlay for selections (keeps original color visible)
+      // Strong highlight overlay for selections
       if (isHighlighted) {
         final overlay = Paint()
           ..style = PaintingStyle.fill
-          // Subtle indigo overlay for clearer contrast on orange fills
-          ..color = const Color(0x403D5AFE);
+          // White-ish overlay in dark mode, dark blue in light mode
+          ..color = isDark 
+              ? const Color.fromARGB(255, 255, 250, 180) // Semi-transparent white
+              : const Color(0x600D47A1); // Semi-transparent deep blue
         if (useRoundedCorners) {
           canvas.drawRRect(
             RRect.fromRectAndRadius(rect, cornerRadius),
@@ -345,7 +380,7 @@ class MapPainter extends CustomPainter {
       
       // Draw text if zoomed in and cell is large enough
       if (shouldDrawText && cell.content.isNotEmpty && width > 20 && height > 15) {
-        _drawText(canvas, cell, rect);
+        _drawText(canvas, cell, rect, isHighlighted: isHighlighted);
       }
     }
   }
@@ -361,8 +396,8 @@ class MapPainter extends CustomPainter {
     return cell.content;
   }
 
-  void _drawText(Canvas canvas, MergedCell cell, Rect rect) {
-    final textStyle = _getTextStyle(cell);
+  void _drawText(Canvas canvas, MergedCell cell, Rect rect, {bool isHighlighted = false}) {
+    final textStyle = _getTextStyle(cell, isHighlighted: isHighlighted);
     final displayText = _getDisplayText(cell);
     final textSpan = TextSpan(
       text: displayText,
@@ -420,13 +455,19 @@ class MapPainter extends CustomPainter {
     return isDark ? const Color(0xFF4A4A4A) : const Color(0xFF9E9E9E);
   }
 
-  TextStyle _getTextStyle(MergedCell cell) {
+  TextStyle _getTextStyle(MergedCell cell, {bool isHighlighted = false}) {
     if (cell.isBooth) {
+      // When highlighted: dark text on bright/white overlay (dark mode), white text on dark blue (light mode)
+      Color textColor;
+      if (isHighlighted) {
+        textColor = isDark ? Colors.black : Colors.white;
+      } else {
+        textColor = isDark ? Colors.white : const Color(0xFF0D47A1);
+      }
       return TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        // Use white in dark mode for maximum contrast across section fills
-        color: isDark ? Colors.white : const Color(0xFF0D47A1),
+        color: textColor,
       );
     } else if (cell.isLocationMarker && cell.content != 'a' && cell.content != 'b') {
       return TextStyle(
