@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/creator.dart';
-import '../creator_avatar.dart';
+import '../creator_list_view.dart';
 
 class ExpandableSearch extends StatefulWidget {
   final List<Creator> creators;
@@ -78,80 +78,6 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
     });
   }
 
-  int _getItemCount() {
-    // Add 1 for featured creator when not searching
-    return !_hasSearched ? _filteredCreators.length + 1 : _filteredCreators.length;
-  }
-
-  Widget _buildFeaturedCreatorTile(BuildContext context) {
-    final theme = Theme.of(context);
-    // Find "Negi no Tomodachi"
-    final featured = widget.creators.firstWhere(
-      (c) => c.name.toLowerCase().contains('negi no tomodachi'),
-      orElse: () => widget.creators.first,
-    );
-    
-    final section = _getBoothSection(featured);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(
-            'Check us out~',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                _getSectionColor(section).withValues(alpha: 0.1),
-                _getSectionColor(section).withValues(alpha: 0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _getSectionColor(section).withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-          ),
-          child: ListTile(
-            leading: CreatorAvatar(creator: featured),
-            title: Text(
-              featured.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              '${featured.boothsDisplay} • ${featured.dayDisplay}',
-              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-            ),
-            trailing: const Icon(Icons.location_on),
-            onTap: () => _handleCreatorTap(featured),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            'All Creators',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   void _collapse() {
     _focusNode.unfocus();
@@ -196,54 +122,15 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                   child: Column(
                     children: [
                       const SizedBox(height: 80), // Space for search bar
-                      
-                      // Results count
-                      if (_hasSearched)
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                          '${_filteredCreators.length} result${_filteredCreators.length == 1 ? '' : 's'}',
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: 14,
-                          ),
-                            ),
-                          ),
-                        ),
-                      
                       // Results list
                       Expanded(
-                        child: _filteredCreators.isEmpty && _hasSearched
-                            ? Center(
-                                child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.search_off, size: 64, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No results found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
-                            ),
-                                  ],
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: _getItemCount(),
-                                itemBuilder: (context, index) {
-                                  // Show featured creator at top when no search query
-                                  if (!_hasSearched && index == 0) {
-                                    return _buildFeaturedCreatorTile(context);
-                                  }
-                                  final creatorIndex = !_hasSearched ? index - 1 : index;
-                                  final creator = _filteredCreators[creatorIndex];
-                                  return _buildCreatorTile(creator, context);
-                                },
-                              ),
+                        child: CreatorListView(
+                          creators: widget.creators,
+                          filteredCreators: _filteredCreators,
+                          hasSearched: _hasSearched,
+                          onCreatorSelected: _handleCreatorTap,
+                          showFeaturedCreator: true,
+                        ),
                       ),
                     ],
                   ),
@@ -328,46 +215,5 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
     );
   }
 
-  Widget _buildCreatorTile(Creator creator, BuildContext context) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: CreatorAvatar(creator: creator),
-      title: Text(
-        creator.name,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        '${creator.boothsDisplay} • ${creator.dayDisplay}',
-        style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-      ),
-      trailing: const Icon(Icons.location_on),
-      onTap: () => _handleCreatorTap(creator),
-    );
-  }
-
-  String _getBoothSection(Creator creator) {
-    if (creator.booths.isEmpty) return '?';
-    final firstBooth = creator.booths.first;
-    final hyphen = firstBooth.indexOf('-');
-    if (hyphen > 0) {
-      return firstBooth.substring(0, hyphen).toUpperCase();
-    }
-    return firstBooth.isNotEmpty ? firstBooth.substring(0, 1).toUpperCase() : '?';
-  }
-
-  Color _getSectionColor(String section) {
-    const List<Color> palette = [
-      Color(0xFF1976D2), // blue 700
-      Color(0xFF388E3C), // green 600
-      Color(0xFFEF6C00), // orange 800
-      Color(0xFF7B1FA2), // purple 700
-      Color(0xFFD32F2F), // red 700
-      Color(0xFF00838F), // cyan 800
-      Color(0xFF558B2F), // light green 700
-      Color(0xFFFF8F00), // amber 800
-    ];
-    final idx = section.codeUnitAt(0) % palette.length;
-    return palette[idx];
-  }
 }
 
