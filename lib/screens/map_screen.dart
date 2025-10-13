@@ -7,6 +7,7 @@ import '../widgets/mobile/expandable_search.dart';
 import '../widgets/mobile/creator_selector_sheet.dart';
 import '../widgets/desktop/desktop_sidebar.dart';
 import '../widgets/github_button.dart';
+import '../widgets/version_notification.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
 
@@ -237,6 +238,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 onBoothTap: _handleBoothTap,
               ),
               const GitHubButton(isDesktop: true),
+              const VersionNotification(isDesktop: true),
             ],
           ),
         ),
@@ -256,6 +258,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ),
         
         const GitHubButton(isDesktop: false),
+        const VersionNotification(isDesktop: false),
         
         if (_selectedCreator != null)
           SlideTransition(
