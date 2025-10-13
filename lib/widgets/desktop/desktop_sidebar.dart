@@ -347,7 +347,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
       child: CreatorDetailContent(
         creator: creator,
         showShareButton: true,
-        showFavoriteButton: false,
+        showFavoriteButton: true,
         showCloseButton: false,
       ),
     );

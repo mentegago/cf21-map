@@ -1,8 +1,8 @@
+import 'package:cf21_map_flutter/widgets/favorite_button.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import '../models/creator.dart';
-import '../services/favorites_service.dart';
 import 'creator_avatar.dart';
 
 class CreatorDetailContent extends StatelessWidget {
@@ -56,7 +56,7 @@ class CreatorDetailContent extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showFavoriteButton) FavoriteButton(creator: creator),
+              if (showFavoriteButton) FavoriteButton(key: Key(creator.name), creator: creator),
               if (showShareButton)
                 IconButton(
                   icon: const Icon(Icons.share),
@@ -216,41 +216,5 @@ class CreatorDetailContent extends StatelessWidget {
         ),
       );
     }
-  }
-}
-
-class FavoriteButton extends StatelessWidget {
-  const FavoriteButton({
-    super.key,
-    required this.creator,
-  });
-
-  final Creator creator;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return FutureBuilder<bool>(
-      future: FavoritesService.instance.isFavorite(creator.name),
-      builder: (context, snapshot) {
-        final isFavorite = snapshot.data ?? false;
-        return IconButton(
-          icon: Icon(
-            isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: isFavorite ? Colors.pink : theme.iconTheme.color,
-          ),
-          tooltip: isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
-          onPressed: () async {
-            if (isFavorite) {
-              await FavoritesService.instance.removeFavorite(creator.name);
-            } else {
-              await FavoritesService.instance.addFavorite(creator);
-            }
-            // Force rebuild
-            (context as Element).markNeedsBuild();
-          },
-        );
-      },
-    );
   }
 }
