@@ -7709,8 +7709,7 @@
   {
     "name": "Prizm Promise",
     "booths": [
-      "P-04a",
-      "P-04b"
+      "AE-07"
     ],
     "day": "BOTH"
   },
@@ -8162,7 +8161,8 @@
   {
     "name": "Rumah Bersalin Omega",
     "booths": [
-      "J-53a"
+      "P-04a",
+      "P-04b"
     ],
     "day": "BOTH"
   },
