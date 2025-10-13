@@ -215,7 +215,6 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
       hasSearched: _hasSearched,
       onCreatorSelected: _handleCreatorSelected,
       scrollController: _searchScrollController,
-      showFeaturedCreator: true,
     );
   }
 

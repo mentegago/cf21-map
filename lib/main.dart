@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'screens/map_screen.dart';
+import 'services/favorites_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize favorites service to check storage availability
+  await FavoritesService.instance.initialize();
+  
   runApp(const CF21MapApp());
 }
 

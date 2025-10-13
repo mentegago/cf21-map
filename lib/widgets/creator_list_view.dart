@@ -1,14 +1,17 @@
+import 'package:cf21_map_flutter/services/favorites_service.dart';
+import 'package:cf21_map_flutter/widgets/creator_tile.dart';
+import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
+
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import '../models/creator.dart';
-import 'creator_avatar.dart';
 
-class CreatorListView extends StatelessWidget {
+class CreatorListView extends StatefulWidget {
   final List<Creator> creators;
   final List<Creator> filteredCreators;
   final bool hasSearched;
   final Function(Creator) onCreatorSelected;
   final ScrollController? scrollController;
-  final bool showFeaturedCreator;
 
   const CreatorListView({
     super.key,
@@ -16,51 +19,82 @@ class CreatorListView extends StatelessWidget {
     required this.filteredCreators,
     required this.hasSearched,
     required this.onCreatorSelected,
-    this.scrollController,
-    this.showFeaturedCreator = true,
+    this.scrollController
   });
+
+  @override
+  State<CreatorListView> createState() => _CreatorListViewState();
+}
+
+class _CreatorListViewState extends State<CreatorListView> {
+  final _favoritesService = FavoritesService.instance;
+  late final _featuredCreator = widget.creators.firstWhereOrNull(
+    (c) => c.name.toLowerCase().contains('negi no tomodachi')
+  );
+  
+  List<Creator>? _favorites;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    if (!widget.hasSearched) {
+      final favorites = await _favoritesService.getFavorites();
+      if (mounted) {
+        setState(() {
+          _favorites = favorites;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
+    return AnimatedBuilder(
+      animation: _favoritesService,
+      builder: (context, child) {
+        _loadFavorites();
+        
+        if (widget.hasSearched) {
+          return _buildSearchResults(theme);
+        } else {
+          return _buildMainView(theme);
+        }
+      },
+    );
+  }
 
-    return ListView(
-      controller: scrollController,
-      children: [
-        // Search results count
-        if (hasSearched)
-          Padding(
+  Widget _buildSearchResults(ThemeData theme) {
+    final itemCount = widget.filteredCreators.isEmpty 
+      ? 2 // results count header + no results message
+      : widget.filteredCreators.length + 1; // +1 for results count header
+    
+    return ListView.builder(
+      controller: widget.scrollController,
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          // Results count header
+          return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              '${filteredCreators.length} result${filteredCreators.length == 1 ? '' : 's'}',
+              '${widget.filteredCreators.length} result${widget.filteredCreators.length == 1 ? '' : 's'}',
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
             ),
-          ),
-
-        // Featured creator (only show when not searching and enabled)
-        if (!hasSearched && showFeaturedCreator) ...[
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Check us out~',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          _buildFeaturedCreator(context, theme),
-        ],
-
+          );
+        }
         
-        // Show "No results" if searching and no results
-        if (hasSearched && filteredCreators.isEmpty)
-          Center(
+        if (widget.filteredCreators.isEmpty) {
+          // No results message
+          return Center(
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Column(
@@ -78,56 +112,74 @@ class CreatorListView extends StatelessWidget {
                 ],
               ),
             ),
-          )
-        else
-          ...filteredCreators.map((creator) => _buildCreatorTile(creator, context, theme)),
-      ],
+          );
+        }
+        
+        // Regular search result
+        final creator = widget.filteredCreators[index - 1];
+        return CreatorTile(creator: creator, onCreatorSelected: widget.onCreatorSelected);
+      },
     );
   }
 
-  Widget _buildFeaturedCreator(BuildContext context, ThemeData theme) {
-    final featured = creators.firstWhere(
-      (c) => c.name.toLowerCase().contains('negi no tomodachi'),
-      orElse: () => creators.first,
-    );
+  Widget _buildMainView(ThemeData theme) {
+    // Calculate total item count for ListView.builder
+    int itemCount = 0;
+    
+    // Featured section: header + featured creator
+    itemCount += 2;
+    
+    // Favorites section: header + favorites (if any and storage is available)
+    if (_favoritesService.isStorageAvailable && (_favorites?.isNotEmpty ?? false)) {
+      itemCount += 1 + (_favorites!.length);
+    }
+    
+    // All creators section: header + all creators
+    itemCount += 1 + widget.filteredCreators.length;
 
-    final section = _getBoothSection(featured);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                _getSectionColor(section).withValues(alpha: 0.1),
-                _getSectionColor(section).withValues(alpha: 0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _getSectionColor(section).withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-          ),
-          child: ListTile(
-            leading: CreatorAvatar(creator: featured),
-            title: Text(
-              featured.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              '${featured.boothsDisplay} • ${featured.dayDisplay}',
-              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-            ),
-            trailing: const Icon(Icons.location_on),
-            onTap: () => onCreatorSelected(featured),
+    return ListView.builder(
+      controller: widget.scrollController,
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        return _buildItemAtIndex(index, theme);
+      },
+    );
+  }
+
+  Widget _buildItemAtIndex(int index, ThemeData theme) {
+    int currentIndex = 0;
+    
+    // Featured section
+    if (index == 0) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'Check us out~',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            letterSpacing: 0.5,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      );
+    }
+    currentIndex++;
+    
+    if (index == 1) {
+      return _featuredCreator != null 
+        ? CreatorTileFeatured(creator: _featuredCreator!, onCreatorSelected: widget.onCreatorSelected) 
+        : const SizedBox.shrink();
+    }
+    currentIndex++;
+    
+    // Favorites section
+    if (_favoritesService.isStorageAvailable && (_favorites?.isNotEmpty ?? false)) {
+      if (index == 2) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
           child: Text(
-            'All Creators',
+            'Favorites',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -135,49 +187,40 @@ class CreatorListView extends StatelessWidget {
               letterSpacing: 0.5,
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCreatorTile(Creator creator, BuildContext context, ThemeData theme) {
-    return ListTile(
-      leading: CreatorAvatar(creator: creator),
-      title: Text(
-        creator.name,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        '${creator.boothsDisplay} • ${creator.dayDisplay}',
-        style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-      ),
-      trailing: const Icon(Icons.location_on),
-      onTap: () => onCreatorSelected(creator),
-    );
-  }
-
-  String _getBoothSection(Creator creator) {
-    if (creator.booths.isEmpty) return '?';
-    final firstBooth = creator.booths.first;
-    final hyphen = firstBooth.indexOf('-');
-    if (hyphen > 0) {
-      return firstBooth.substring(0, hyphen).toUpperCase();
+        );
+      }
+      currentIndex++;
+      
+      final favoriteIndex = index - 3;
+      if (favoriteIndex >= 0 && favoriteIndex < _favorites!.length) {
+        return CreatorTile(creator: _favorites![favoriteIndex], onCreatorSelected: widget.onCreatorSelected);
+      }
+      currentIndex += _favorites!.length;
     }
-    return firstBooth.isNotEmpty ? firstBooth.substring(0, 1).toUpperCase() : '?';
-  }
-
-  Color _getSectionColor(String section) {
-    const List<Color> palette = [
-      Color(0xFF1976D2), // blue 700
-      Color(0xFF388E3C), // green 600
-      Color(0xFFEF6C00), // orange 800
-      Color(0xFF7B1FA2), // purple 700
-      Color(0xFFD32F2F), // red 700
-      Color(0xFF00838F), // cyan 800
-      Color(0xFF558B2F), // light green 700
-      Color(0xFFFF8F00), // amber 800
-    ];
-    final idx = section.codeUnitAt(0) % palette.length;
-    return palette[idx];
+    
+    // All creators section
+    if (index == currentIndex) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Text(
+          'All Creators',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
+    }
+    currentIndex++;
+    
+    // All creators items
+    final creatorIndex = index - currentIndex;
+    if (creatorIndex >= 0 && creatorIndex < widget.filteredCreators.length) {
+      return CreatorTile(creator: widget.filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected);
+    }
+    
+    return const SizedBox.shrink();
   }
 }

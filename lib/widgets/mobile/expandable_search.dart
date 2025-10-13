@@ -129,7 +129,6 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                           filteredCreators: _filteredCreators,
                           hasSearched: _hasSearched,
                           onCreatorSelected: _handleCreatorTap,
-                          showFeaturedCreator: true,
                         ),
                       ),
                     ],

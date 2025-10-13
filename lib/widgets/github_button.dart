@@ -3,7 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class GitHubButton extends StatelessWidget {
-  const GitHubButton({super.key});
+  const GitHubButton({super.key, required this.isDesktop});
+
+  final bool isDesktop;
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +14,8 @@ class GitHubButton extends StatelessWidget {
     
     return Positioned(
       bottom: 16,
-      right: 16,
+      left: isDesktop ? 16 : null,
+      right: isDesktop ? null : 16,
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
@@ -29,7 +32,7 @@ class GitHubButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           onTap: () => _launchGitHubUrl(),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               spacing: 8,
               children: [
@@ -38,7 +41,7 @@ class GitHubButton extends StatelessWidget {
                   width: 24,
                   height: 24,
                 ),
-                const Text("Source Code"),
+                if (isDesktop) const Text("Source Code"),
               ],
             ),
           ),

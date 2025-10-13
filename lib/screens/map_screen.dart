@@ -215,34 +215,31 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   }
 
   Widget _buildDesktopLayout() {
-    return Stack(
+    return Row(
       children: [
-        Row(
-          children: [
-            // Left sidebar
-            if (_creators != null)
-              DesktopSidebar(
-                creators: _creators!,
-                selectedCreator: _selectedCreator,
-                onCreatorSelected: _handleCreatorSelected,
-                onClear: _selectedCreator != null ? _clearSelection : null,
-              ),
-            
-            // Map viewer
-            Expanded(
-              child: MapViewer(
+        if (_creators != null)
+          DesktopSidebar(
+            creators: _creators!,
+            selectedCreator: _selectedCreator,
+            onCreatorSelected: _handleCreatorSelected,
+            onClear: _selectedCreator != null ? _clearSelection : null,
+          ),
+        
+        // Map viewer
+        Expanded(
+          child: Stack(
+            children: [
+              MapViewer(
                 mergedCells: _mergedCells!,
                 rows: _rows,
                 cols: _cols,
                 highlightedBooths: _highlightedBooths,
                 onBoothTap: _handleBoothTap,
               ),
-            ),
-          ],
+              const GitHubButton(isDesktop: true),
+            ],
+          ),
         ),
-        
-        // GitHub button
-        const GitHubButton(),
       ],
     );
   }
@@ -258,18 +255,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           onBoothTap: _handleBoothTap,
         ),
         
-        const GitHubButton(),
+        const GitHubButton(isDesktop: false),
         
-        // Expandable search (always visible)
-        if (_creators != null)
-          ExpandableSearch(
-            creators: _creators!,
-            onCreatorSelected: _handleCreatorSelected,
-            onClear: _selectedCreator != null ? _clearSelection : null,
-            selectedCreator: _selectedCreator,
-          ),
-        
-        // Creator detail panel (Google Maps style)
         if (_selectedCreator != null)
           SlideTransition(
             position: _detailSlideAnimation,
@@ -277,6 +264,14 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               creator: _selectedCreator!,
               onClose: _clearSelection,
             ),
+          ),
+
+        if (_creators != null)
+          ExpandableSearch(
+            creators: _creators!,
+            onCreatorSelected: _handleCreatorSelected,
+            onClear: _selectedCreator != null ? _clearSelection : null,
+            selectedCreator: _selectedCreator,
           ),
       ],
     );
