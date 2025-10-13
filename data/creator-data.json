@@ -11034,5 +11034,29 @@
       "M-54b"
     ],
     "day": "BOTH"
+  },
+  {
+    "name": "Amimir Club",
+    "booths": [
+      "Z-33a",
+      "Z-33b"
+    ],
+    "day": "BOTH"
+  },
+  {
+    "name": "Basakila",
+    "booths": [
+      "Z-34a",
+      "Z-34b"
+    ],
+    "day": "BOTH"
+  },
+  {
+    "name": "Wantja and Garde.id",
+    "booths": [
+      "Z-35a",
+      "Z-35b"
+    ],
+    "day": "BOTH"
   }
 ]
