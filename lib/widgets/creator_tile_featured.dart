@@ -1,5 +1,6 @@
 import 'package:cf21_map_flutter/widgets/creator_avatar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 import '../models/creator.dart';
 
@@ -20,6 +21,32 @@ class CreatorTileFeatured extends StatefulWidget {
 class _CreatorTileFeaturedState extends State<CreatorTileFeatured> {
   bool _isHovered = false;
 
+  void _handleHover(PointerEvent event) {
+    // Ignore hover events from touch devices
+    if (event.kind == PointerDeviceKind.touch) {
+      return;
+    }
+    
+    if (!_isHovered) {
+      setState(() {
+        _isHovered = true;
+      });
+    }
+  }
+
+  void _handleExit(PointerEvent event) {
+    // Ignore exit events from touch devices
+    if (event.kind == PointerDeviceKind.touch) {
+      return;
+    }
+    
+    if (_isHovered) {
+      setState(() {
+        _isHovered = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -32,8 +59,8 @@ class _CreatorTileFeaturedState extends State<CreatorTileFeatured> {
       children: [
         MouseRegion(
           cursor: SystemMouseCursors.click,
-          onHover: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
+          onHover: _handleHover,
+          onExit: _handleExit,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
