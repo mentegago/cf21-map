@@ -31,6 +31,51 @@ flutter run -d chrome
 flutter build web --release
 ```
 
+## Kontribusi
+
+Jika ingin menambahkan informasi booth, data list booth ada di `data/creator-data.json`, dengan format sebagai berikut:
+
+```json
+{
+"name": "Nama booth",
+"booths": [
+    "BOOTH-1",
+    "BOOTH-2",
+    "BOOTH-3",
+    "BOOTH-4"
+],
+"day": "SAT/SUN/BOTH",
+"profileImage": "assets/profilepicture.jpg",
+"informations": [
+    {
+    "title": "Judul dari section informasinya",
+    "content": "Isi dari sectionnya"
+    },
+    {
+    "title": "Judul dari section informasinya",
+    "content": "Isi dari sectionnya"
+    }
+],
+"urls": [
+    {
+    "title": "Judul link 2",
+    "url": "https://example.com"
+    },
+    {
+    "title": "Judul link 2",
+    "url": "https://example.com"
+    }
+]
+}
+```
+*`profileImage`, `informations`, dan `urls` opsional.
+
+Kalau ingin menambahkan profile picture, silakan tambahkan di folder `assets/` dan update JSON booth sesuai format di atas. Mohon minimalisir sizenya ya, kalau bisa under 5KB 🙇
+
+Silakan submit PR dan saya mungkin akan mencoba untuk verif dulu untuk memastikan datanya benar atau tidak.
+
+Jika ingin kontribusi ke kodingan appnya (bug fixing, nambahin feature, dsb.), mohon dimaklumi, karena ini proyek iseng weekend, kodingannya sangat berantakan, jadi ga rekomen utak-atik kodingannya. Tapi kalau anda psikopat, silakan submit PR.
+
 ---
 
 See you at CF21 💖

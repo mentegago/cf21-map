@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/creator.dart';
-import 'creator_avatar.dart';
+import '../../models/creator.dart';
+import '../creator_avatar.dart';
 
 class ExpandableSearch extends StatefulWidget {
   final List<Creator> creators;

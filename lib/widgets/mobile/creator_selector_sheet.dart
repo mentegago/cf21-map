@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/creator.dart';
-import 'creator_avatar.dart';
+import '../../models/creator.dart';
+import '../creator_avatar.dart';
 
 class CreatorSelectorSheet extends StatelessWidget {
   final String boothId;
@@ -42,9 +42,9 @@ class CreatorSelectorSheet extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text(
+                const Text(
                   'Select Creator',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),

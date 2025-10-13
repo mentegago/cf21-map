@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import '../services/map_parser.dart';
 import '../widgets/map_viewer.dart';
-import '../widgets/creator_detail_sheet.dart';
-import '../widgets/expandable_search.dart';
-import '../widgets/creator_selector_sheet.dart';
-import '../widgets/desktop_sidebar.dart';
+import '../widgets/mobile/creator_detail_sheet.dart';
+import '../widgets/mobile/expandable_search.dart';
+import '../widgets/mobile/creator_selector_sheet.dart';
+import '../widgets/desktop/desktop_sidebar.dart';
+import '../widgets/github_button.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
 
@@ -214,27 +215,34 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   }
 
   Widget _buildDesktopLayout() {
-    return Row(
+    return Stack(
       children: [
-        // Left sidebar
-        if (_creators != null)
-          DesktopSidebar(
-            creators: _creators!,
-            selectedCreator: _selectedCreator,
-            onCreatorSelected: _handleCreatorSelected,
-            onClear: _clearSelection,
-          ),
-        
-        // Map viewer
-        Expanded(
-          child: MapViewer(
-            mergedCells: _mergedCells!,
-            rows: _rows,
-            cols: _cols,
-            highlightedBooths: _highlightedBooths,
-            onBoothTap: _handleBoothTap,
-          ),
+        Row(
+          children: [
+            // Left sidebar
+            if (_creators != null)
+              DesktopSidebar(
+                creators: _creators!,
+                selectedCreator: _selectedCreator,
+                onCreatorSelected: _handleCreatorSelected,
+                onClear: _selectedCreator != null ? _clearSelection : null,
+              ),
+            
+            // Map viewer
+            Expanded(
+              child: MapViewer(
+                mergedCells: _mergedCells!,
+                rows: _rows,
+                cols: _cols,
+                highlightedBooths: _highlightedBooths,
+                onBoothTap: _handleBoothTap,
+              ),
+            ),
+          ],
         ),
+        
+        // GitHub button
+        const GitHubButton(),
       ],
     );
   }
@@ -250,15 +258,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           onBoothTap: _handleBoothTap,
         ),
         
-        // Creator detail panel (Google Maps style)
-        if (_selectedCreator != null)
-          SlideTransition(
-            position: _detailSlideAnimation,
-            child: CreatorDetailSheet(
-              creator: _selectedCreator!,
-              onClose: _clearSelection,
-            ),
-          ),
+        const GitHubButton(),
         
         // Expandable search (always visible)
         if (_creators != null)
@@ -267,6 +267,16 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             onCreatorSelected: _handleCreatorSelected,
             onClear: _selectedCreator != null ? _clearSelection : null,
             selectedCreator: _selectedCreator,
+          ),
+        
+        // Creator detail panel (Google Maps style)
+        if (_selectedCreator != null)
+          SlideTransition(
+            position: _detailSlideAnimation,
+            child: CreatorDetailSheet(
+              creator: _selectedCreator!,
+              onClose: _clearSelection,
+            ),
           ),
       ],
     );
