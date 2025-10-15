@@ -31,12 +31,6 @@ flutter:
     - assets/
   
   fonts:
-    - family: PlusJakartaSans
-      fonts:
-        - asset: fonts/PlusJakartaSans-VariableFont_wght.ttf
-        - asset: fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf
-          style: italic
-
     - family: Roboto
       fonts:
         - asset: fonts/Roboto-VariableFont_wdth,wght.ttf
