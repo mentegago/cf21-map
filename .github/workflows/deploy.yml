@@ -35,7 +35,7 @@ jobs:
         run: flutter pub get
       
       - name: Build web
-        run: flutter build web --release --base-href / --pwa-strategy=offline-first
+        run: flutter build web --release --base-href / --pwa-strategy=offline-first --no-web-resources-cdn
       
       - name: Add .nojekyll file
         run: touch build/web/.nojekyll
