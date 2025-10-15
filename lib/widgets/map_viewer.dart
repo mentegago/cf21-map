@@ -341,7 +341,7 @@ class MapPainter extends CustomPainter {
     final hall7Rect = Rect.fromLTWH(
       0.5,
       3 / 103 * size.height,
-      size.width * 40 / 142 - 1,
+      size.width * 44 / 146 - 1,
       size.height * 99 / 103,
     );
     canvas.drawRect(
@@ -357,9 +357,9 @@ class MapPainter extends CustomPainter {
     );
 
     final hall8Rect = Rect.fromLTWH(
-      size.width * 40 / 142 + 0.5,
+      size.width * 44 / 146 + 0.5,
       3 / 103 * size.height,
-      size.width * 50 / 142 - 1,
+      size.width * 50 / 146 - 1,
       size.height * 99 / 103,
     );
     canvas.drawRect(
@@ -375,9 +375,9 @@ class MapPainter extends CustomPainter {
     );
 
     final hall9Rect = Rect.fromLTWH(
-      size.width * 90 / 142 + 0.5,
+      size.width * 94 / 146 + 0.5,
       3 / 103 * size.height,
-      size.width * 52 / 142 - 1,
+      size.width * 52 / 146 - 1,
       size.height * 99 / 103,
     );
     canvas.drawRect(
