@@ -154,7 +154,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
         isMultiLetterArea = area.length > 1;
       }
     }
-    final targetScale = isMultiLetterArea ? 0.5 : 0.8;
+    final targetScale = isMultiLetterArea ? 0.6 : 0.8;
 
     // Calculate the translation to center the booths with target zoom
     final translationX = viewportWidth / 2 - avgX * targetScale;
@@ -256,12 +256,15 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     
     return InteractiveViewer(
       transformationController: _transformationController,
       minScale: 0.1,
-      maxScale: 10.0,
-      boundaryMargin: const EdgeInsets.symmetric(horizontal: 200, vertical: 400),
+      maxScale: 1.5,
+      boundaryMargin: EdgeInsets.symmetric(horizontal: screenWidth * 0.8, vertical: screenHeight * 0.8),
       constrained: false,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
