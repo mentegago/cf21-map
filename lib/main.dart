@@ -25,6 +25,7 @@ class CF21MapApp extends StatelessWidget {
         ),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color.fromARGB(255, 247, 247, 247),
+        fontFamily: 'PlusJakartaSans',
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -34,6 +35,7 @@ class CF21MapApp extends StatelessWidget {
         useMaterial3: true,
         // Match map dark background so empty/panned areas are the same color
         scaffoldBackgroundColor: const Color(0xFF0A1B2A),
+        fontFamily: 'PlusJakartaSans',
       ),
       themeMode: ThemeMode.system,
       home: const MapScreen(),

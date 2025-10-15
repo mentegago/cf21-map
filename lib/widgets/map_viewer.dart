@@ -557,6 +557,7 @@ class MapPainter extends CustomPainter {
       return const TextStyle(
         fontSize: 0,
         color: Colors.transparent,
+        fontFamily: 'PlusJakartaSans',
       );
     } else if (cell.isBooth) {
       // When highlighted: dark text on bright/white overlay (dark mode), white text on dark blue (light mode)
@@ -570,22 +571,26 @@ class MapPainter extends CustomPainter {
         fontSize: 18,
         fontWeight: FontWeight.bold,
         color: textColor,
+        fontFamily: 'PlusJakartaSans',
       );
     } else if (cell.isLocationMarker && cell.content != 'a' && cell.content != 'b') {
       return TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
         color: isDark ? const Color(0xFFFFB74D) : const Color(0xFFE65100),
+        fontFamily: 'PlusJakartaSans',
       );
     } else if (cell.isHall) {
       return TextStyle(
         fontSize: 24,
         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        fontFamily: 'PlusJakartaSans',
       );
     }
     return TextStyle(
       fontSize: 14,
       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      fontFamily: 'PlusJakartaSans',
     );
   }
 
