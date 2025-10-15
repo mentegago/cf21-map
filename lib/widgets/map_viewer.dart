@@ -339,9 +339,9 @@ class MapPainter extends CustomPainter {
     );
 
     final hall7Rect = Rect.fromLTWH(
-      0,
+      0.5,
       3 / 103 * size.height,
-      size.width * 40 / 142,
+      size.width * 40 / 142 - 1,
       size.height * 99 / 103,
     );
     canvas.drawRect(
@@ -357,9 +357,9 @@ class MapPainter extends CustomPainter {
     );
 
     final hall8Rect = Rect.fromLTWH(
-      size.width * 40 / 142,
+      size.width * 40 / 142 + 0.5,
       3 / 103 * size.height,
-      size.width * 50 / 142,
+      size.width * 50 / 142 - 1,
       size.height * 99 / 103,
     );
     canvas.drawRect(
@@ -375,9 +375,9 @@ class MapPainter extends CustomPainter {
     );
 
     final hall9Rect = Rect.fromLTWH(
-      size.width * 90 / 142,
+      size.width * 90 / 142 + 0.5,
       3 / 103 * size.height,
-      size.width * 52 / 142,
+      size.width * 52 / 142 - 1,
       size.height * 99 / 103,
     );
     canvas.drawRect(
@@ -420,7 +420,7 @@ class MapPainter extends CustomPainter {
       // Draw base fill using a more refined palette
       Color fillColor = _getCellColor(cell);
       fillPaint.color = fillColor;
-      if (useRoundedCorners) {
+      if (useRoundedCorners && !cell.isHall) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(rect, cornerRadius),
           fillPaint,
@@ -441,7 +441,7 @@ class MapPainter extends CustomPainter {
       }
       borderPaint.color = borderColor;
       borderPaint.strokeWidth = strokeWidth;
-      if (useRoundedCorners) {
+      if (useRoundedCorners && !cell.isHall) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(rect, cornerRadius),
           borderPaint,
