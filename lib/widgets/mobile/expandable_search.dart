@@ -192,7 +192,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                           controller: _searchController,
                           focusNode: _focusNode,
                           decoration: const InputDecoration(
-                            hintText: 'Search CF21 creators...',
+                            hintText: 'Search name, booth, or fandom...',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           ),
