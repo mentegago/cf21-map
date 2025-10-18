@@ -1,0 +1,200 @@
+### **🎯 Main Objective**
+Integrated online catalog data from `catalog.comifuro.net` with existing local data, allowing users to toggle between data sources and view rich creator information.
+
+---
+
+## **🔧 Major Features Added**
+
+### **1. Online Catalog Integration**
+
+**New Service: `catalog_service.dart`**
+- Fetches catalog data from Firebase Cloud Function proxy
+- Implements 12-hour caching using `shared_preferences`
+- Handles CORS by using Firebase proxy instead of direct API calls
+- Extracts `window.__INITIAL_STATE__` JSON from catalog HTML
+
+**Firebase Proxy: `cf-catalog-fetcher/functions/index.js`**
+- Express.js backend deployed on Firebase Cloud Functions
+- Fetches HTML from `catalog.comifuro.net`
+- Parses HTML with Cheerio to extract JSON data
+- Returns processed JSON with CORS headers for Flutter app
+- Allows `https://cf21.nnt.gg` and `localhost:*` origins
+
+---
+
+### **2. Dual Data Source System**
+
+**New Service: `data_source_manager.dart`**
+- Manages both local JSON and online catalog data sources
+- Uses `ChangeNotifier` for reactive state management
+- Combines data sources with catalog as priority, local as fallback
+- Provides `activeCreators` based on selected data source
+- Helper methods: `findCreatorByBooth()`, `findCreatorByName()`
+
+**Data Source Enum:**
+```dart
+enum DataSource {
+  catalog,  // Online catalog data
+  local     // Local JSON fallback
+}
+```
+
+---
+
+### **3. Enhanced Creator Model**
+
+**Updated: `creator.dart`**
+- Added `DataSource` field to track data origin
+- Two parsing methods:
+  - `_fromCatalogJson()` - Parses rich catalog API data
+  - `_fromLocalJson()` - Parses existing local JSON
+- New catalog-specific fields:
+  - `circleCode`, `circleCutUrl`, `fandom`, `otherFandom`
+  - `rating`, `circleType`
+  - `sellsWhat` (map of what they sell)
+  - `socialLinks` (Instagram, Facebook, Twitter, etc.)
+
+**Booth Code Parsing:**
+- `_parseBoothsFromCircleCode()` - Handles complex booth formats
+- `_expandBoothLetterSuffixes()` - Expands `"B-10ab"` → `["B-10a", "B-10b"]`
+- Removes day suffixes: `"L-30b (SAT)"` → `"L-30b"`
+- Splits slash-separated: `"AB-37/AB-38"` → `["AB-37", "AB-38"]`
+
+---
+
+### **4. UI Components**
+
+**New Widget: `data_source_toggle.dart`**
+- Floating action button to switch between Online/Local data
+- Shows cloud icon (blue) for Online, storage icon (orange) for Local
+- Displays statistics dialog:
+  - Total local creators
+  - Total catalog creators
+  - Active creators displayed
+
+**Updated Widget: `creator_detail_content.dart`**
+- Added data source indicator badge (ONLINE/LOCAL)
+- Blue badge for catalog data
+- Orange badge for local data
+
+**Updated Widget: `creator_avatar.dart`**
+- Converted to `StatefulWidget` for error handling
+- Supports network images from catalog (`NetworkImage`)
+- Supports local assets (`AssetImage`)
+- Graceful fallback to colored circle on image load failure
+- Explicit type casting for `ImageProvider<Object>`
+
+---
+
+### **5. Map Screen Integration**
+
+**Updated: `map_screen.dart`**
+- Integrated with `DataSourceManager` via `Provider`
+- Listens for data source changes and reloads data
+- Added debug logging for booth clicks:
+  - Shows clicked booth ID
+  - Lists matched creators with full details
+  - Outputs complete booth mappings as JSON when no match found
+- Booth-to-creators mapping rebuilt on data source change
+
+---
+
+### **6. Dependencies Added**
+
+**Updated: `pubspec.yaml`**
+```yaml
+dependencies:
+  http: ^1.2.2              # HTTP requests
+  html: ^0.15.4             # HTML parsing (unused after proxy)
+  shared_preferences: ^2.5.3 # Local caching
+  provider: ^6.1.2          # State management
+```
+
+---
+
+### **7. Main App Setup**
+
+**Updated: `main.dart`**
+- Initialize `DataSourceManager` before app starts
+- Wrap app with `ChangeNotifierProvider`
+- Load both data sources during initialization
+
+---
+
+## **🔄 Complete Data Flow**
+
+```
+User Opens App
+    ↓
+main.dart initializes DataSourceManager
+    ↓
+DataSourceManager loads:
+  - Local JSON (data/creator-data.json)
+  - Catalog API (via Firebase proxy with 12h cache)
+    ↓
+MapScreen builds booth-to-creators mapping
+    ↓
+User clicks booth square
+    ↓
+MapScreen looks up creators for that booth
+    ↓
+Shows creator details with ONLINE/LOCAL badge
+    ↓
+User can toggle data source
+    ↓
+Map reloads with new data source
+```
+
+---
+
+## **🎨 Booth Code Handling Examples**
+
+| **Input Code** | **Output Booths** | **Notes** |
+|----------------|-------------------|-----------|
+| `"B-10ab"` | `["B-10a", "B-10b"]` | Letter expansion |
+| `"B-09abcd"` | `["B-09a", "B-09b", "B-09c", "B-09d"]` | 4-space expansion |
+| `"AB-37/AB-38"` | `["AB-37", "AB-38"]` | Slash separation |
+| `"L-30b (SAT)"` | `["L-30b"]` | Day suffix removed |
+| `"B-09ab/B-10ab"` | `["B-09a", "B-09b", "B-10a", "B-10b"]` | Combined logic |
+
+---
+
+## **🐛 Issues Fixed**
+
+1. ✅ **CORS Errors** - Resolved with Firebase Cloud Function proxy
+2. ✅ **Multi-booth circles not clickable** - Fixed booth code parsing
+3. ✅ **Network image loading errors** - Added error handling and fallbacks
+4. ✅ **Type inference issues** - Added explicit `ImageProvider<Object>` casts
+5. ✅ **Missing provider dependency** - Added to `pubspec.yaml`
+6. ✅ **Letter suffix booths** - Expanded `"B-10ab"` to individual booths
+
+---
+
+## **✨ Key Features Summary**
+
+- 🌐 **Online catalog data** with rich creator information
+- 💾 **12-hour caching** for performance
+- 🔄 **Data source toggle** (Online/Local)
+- 🏷️ **Data source indicators** on creator details
+- 🖼️ **Network images** with graceful fallbacks
+- 🗺️ **Complete booth coverage** with smart parsing
+- 🔍 **Debug logging** for troubleshooting
+- 📊 **Hybrid mode** (catalog priority, local fallback)
+
+---
+
+## **📦 Files Changed/Created**
+
+**New Files:**
+- `lib/services/catalog_service.dart`
+- `lib/services/data_source_manager.dart`
+- `lib/widgets/data_source_toggle.dart`
+- `cf-catalog-fetcher/functions/index.js`
+
+**Modified Files:**
+- `lib/main.dart`
+- `lib/models/creator.dart`
+- `lib/screens/map_screen.dart`
+- `lib/widgets/creator_detail_content.dart`
+- `lib/widgets/creator_avatar.dart`
+- `pubspec.yaml`
