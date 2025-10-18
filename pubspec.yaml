@@ -27,7 +27,7 @@ flutter:
   
   assets:
     - data/map.json
-    - data/creator-data.json
+    - data/creator-data-initial.json
     - assets/
   
   fonts:

@@ -27,26 +27,39 @@ class CreatorUrl {
 }
 
 class Creator {
+  final int id;
+  final String userId;
   final String name;
   final List<String> booths;
   final String day;
   final String? profileImage;
   final List<CreatorInformation> informations;
   final List<CreatorUrl> urls;
+  final List<String> worksType;
+  final List<String> fandoms;
 
   Creator({
+    required this.id,
+    required this.userId,
     required this.name,
     required this.booths,
     required this.day,
     this.profileImage,
     this.informations = const [],
     this.urls = const [],
+    this.worksType = const [],
+    this.fandoms = const [],
   });
 
   factory Creator.fromJson(Map<String, dynamic> json) {
     final infosJson = (json['informations'] as List?) ?? const [];
     final urlsJson = (json['urls'] as List?) ?? const [];
+    final worksTypeJson = (json['works_type'] as List?) ?? const [];
+    final fandomsJson = (json['fandoms'] as List?) ?? const [];
+    
     return Creator(
+      id: json['id'] as int,
+      userId: json['user_id'] as String,
       name: json['name'] as String,
       booths: (json['booths'] as List<dynamic>).map((e) => e.toString()).toList(),
       day: json['day'] as String,
@@ -59,6 +72,8 @@ class Creator {
           .whereType<Map<String, dynamic>>()
           .map((e) => CreatorUrl.fromJson(e))
           .toList(),
+      worksType: worksTypeJson.map((e) => e.toString()).toList(),
+      fandoms: fandomsJson.map((e) => e.toString()).toList(),
     );
   }
 
@@ -76,5 +91,9 @@ class Creator {
   }
 
   String get boothsDisplay => booths.join(', ');
+  
+  String get worksTypeDisplay => worksType.join(', ');
+  
+  String get fandomsDisplay => fandoms.join(', ');
 }
 

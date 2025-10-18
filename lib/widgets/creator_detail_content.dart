@@ -71,6 +71,22 @@ class CreatorDetailContent extends StatelessWidget {
                 ),
             ],
           ),
+
+          const SizedBox(height: 16),
+
+          ElevatedButton.icon(
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('Open Circle Page'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primaryContainer,
+              foregroundColor: theme.colorScheme.onPrimaryContainer,
+              elevation: 0,
+            ),
+            onPressed: () {
+              final url = 'https://catalog.comifuro.net/circle/${creator.id}';
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            },
+          ),
     
           const SizedBox(height: 16),
           const Divider(),
@@ -90,7 +106,7 @@ class CreatorDetailContent extends StatelessWidget {
               ),
             ],
           ),
-    
+
           const SizedBox(height: 16),
     
           // Informations
@@ -129,20 +145,71 @@ class CreatorDetailContent extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: creator.urls.map((link) {
-                return ActionChip(
-                  avatar: const Icon(Icons.link, size: 18),
-                  label: Text(link.title.isNotEmpty ? link.title : link.url),
-                  onPressed: () {
-                    try {
-                      launchUrl(Uri.parse(link.url), mode: LaunchMode.externalApplication);
-                    } catch (_) {}
-                  },
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  side: BorderSide(color: theme.colorScheme.primary),
+                return Tooltip(
+                  message: link.url,
+                  child: ActionChip(
+                    avatar: const Icon(Icons.link, size: 18),
+                    label: Text(link.title.isNotEmpty ? link.title : link.url),
+                    onPressed: () {
+                      try {
+                        launchUrl(Uri.parse(link.url), mode: LaunchMode.externalApplication);
+                      } catch (_) {}
+                    },
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    side: BorderSide(color: theme.colorScheme.primary),
+                  ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
+          ],
+
+          // Fandom
+          if (creator.fandoms.isNotEmpty) ...[
+            Text(
+              'Fandom${creator.fandoms.length > 1 ? 's' : ''}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: creator.fandoms.map((fandom) {
+                return Chip(
+                  avatar: Icon(Icons.favorite, size: 18, color: theme.colorScheme.primary),
+                  label: Text(fandom),
+                  backgroundColor: theme.colorScheme.surfaceContainerLow,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 18),
+          ],
+
+          // Works Type
+          if (creator.worksType.isNotEmpty) ...[
+            Text(
+              'Works Type${creator.worksType.length > 1 ? 's' : ''}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: creator.worksType.map((worksType) {
+                return Chip(
+                  avatar: Icon(Icons.sell, size: 18, color: theme.colorScheme.primary),
+                  label: Text(worksType),
+                  backgroundColor: theme.colorScheme.surfaceContainerLow,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 18),
           ],
     
           // Booths
