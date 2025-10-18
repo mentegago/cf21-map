@@ -225,8 +225,17 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
         showShareButton: true,
         showFavoriteButton: true,
         showCloseButton: false,
+        onRequestSearch: _handleRequestSearch,
       ),
     );
   }
 
+  void _handleRequestSearch(String query) {
+    setState(() {
+      _searchController.text = query;
+      _showSearchList = true;
+    });
+    
+    _performSearch(query);
+  }
 }

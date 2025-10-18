@@ -5,11 +5,13 @@ import '../creator_detail_content.dart';
 class CreatorDetailSheet extends StatelessWidget {
   final Creator creator;
   final VoidCallback onClose;
+  final Function(String) onRequestSearch;
 
   const CreatorDetailSheet({
     super.key,
     required this.creator,
     required this.onClose,
+    required this.onRequestSearch,
   });
 
   @override
@@ -57,6 +59,7 @@ class CreatorDetailSheet extends StatelessWidget {
                 showShareButton: true,
                 showCloseButton: true,
                 onClose: onClose,
+                onRequestSearch: onRequestSearch,
               ),
               ],
             ),
@@ -64,6 +67,5 @@ class CreatorDetailSheet extends StatelessWidget {
         },
       );
     }
-
 }
 

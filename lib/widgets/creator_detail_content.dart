@@ -11,6 +11,7 @@ class CreatorDetailContent extends StatelessWidget {
   final bool showShareButton;
   final bool showCloseButton;
   final VoidCallback? onClose;
+  final Function(String) onRequestSearch;
 
   const CreatorDetailContent({
     super.key,
@@ -19,6 +20,7 @@ class CreatorDetailContent extends StatelessWidget {
     this.showShareButton = true,
     this.showCloseButton = false,
     this.onClose,
+    required this.onRequestSearch,
   });
 
   @override
@@ -178,10 +180,14 @@ class CreatorDetailContent extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: creator.fandoms.map((fandom) {
-                return Chip(
-                  avatar: Icon(Icons.favorite, size: 18, color: theme.colorScheme.primary),
+                return ActionChip(
+                  avatar: const Icon(Icons.favorite, size: 18),
                   label: Text(fandom),
-                  backgroundColor: theme.colorScheme.surfaceContainerLow,
+                  onPressed: () {
+                    onRequestSearch(fandom);
+                  },
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  side: BorderSide(color: theme.colorScheme.primary),
                 );
               }).toList(),
             ),

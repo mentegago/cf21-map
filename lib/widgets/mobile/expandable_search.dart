@@ -17,14 +17,23 @@ class ExpandableSearch extends StatefulWidget {
   });
 
   @override
-  State<ExpandableSearch> createState() => _ExpandableSearchState();
+  State<ExpandableSearch> createState() => ExpandableSearchState();
 }
 
-class _ExpandableSearchState extends State<ExpandableSearch> {
+class ExpandableSearchState extends State<ExpandableSearch> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _searchScrollController = ScrollController();
   bool _isExpanded = false;
+
+  void performSearch(String query) {
+    setState(() {
+      _searchController.text = query;
+      _isExpanded = true;
+    });
+    _focusNode.requestFocus();
+    _performSearch(query);
+  }
 
   @override
   void initState() {

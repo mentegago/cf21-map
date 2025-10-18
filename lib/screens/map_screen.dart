@@ -29,6 +29,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   String? _error;
   late AnimationController _detailAnimationController;
   late Animation<Offset> _detailSlideAnimation;
+  final GlobalKey<ExpandableSearchState> _expandableSearchKey = GlobalKey<ExpandableSearchState>();
 
   @override
   void initState() {
@@ -281,11 +282,13 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             child: CreatorDetailSheet(
               creator: selectedCreator,
               onClose: _clearSelection,
+              onRequestSearch: _handleMobileRequestSearch,
             ),
           ),
 
         if (creators != null)
           ExpandableSearch(
+            key: _expandableSearchKey,
             creators: creators,
             onCreatorSelected: _handleCreatorSelected,
             onClear: selectedCreator != null ? _clearSelection : null,
@@ -293,6 +296,10 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           ),
       ],
     );
+  }
+
+  void _handleMobileRequestSearch(String query) {
+    _expandableSearchKey.currentState?.performSearch(query);
   }
 }
 
