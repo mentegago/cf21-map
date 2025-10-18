@@ -10,16 +10,14 @@ import '../services/creator_data_service.dart';
 
 class CreatorListView extends StatefulWidget {
   final List<Creator> creators;
-  final List<Creator> filteredCreators;
-  final bool hasSearched;
+  final String searchQuery;
   final Function(Creator) onCreatorSelected;
   final ScrollController? scrollController;
 
   const CreatorListView({
     super.key,
     required this.creators,
-    required this.filteredCreators,
-    required this.hasSearched,
+    required this.searchQuery,
     required this.onCreatorSelected,
     this.scrollController
   });
@@ -29,6 +27,18 @@ class CreatorListView extends StatefulWidget {
 }
 
 class _CreatorListViewState extends State<CreatorListView> {
+  
+  List<Creator> get _filteredCreators {
+    if (widget.searchQuery.isNotEmpty) {
+      final lowerQuery = widget.searchQuery.toLowerCase();
+      return widget.creators.where((creator) {
+        return creator.name.toLowerCase().contains(lowerQuery) ||
+            creator.booths.any((booth) => booth.toLowerCase().contains(lowerQuery));
+      }).toList();
+    }
+    return widget.creators;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +46,7 @@ class _CreatorListViewState extends State<CreatorListView> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.hasSearched) {
+    if (widget.searchQuery.isNotEmpty) {
       return _buildSearchResults(context);
     } else {
       return _buildMainView(context);
@@ -45,9 +55,9 @@ class _CreatorListViewState extends State<CreatorListView> {
 
   Widget _buildSearchResults(BuildContext context) {
     final theme = Theme.of(context);
-    final itemCount = widget.filteredCreators.isEmpty 
+    final itemCount = _filteredCreators.isEmpty 
       ? 2 // results count header + no results message
-      : widget.filteredCreators.length + 1; // +1 for results count header
+      : _filteredCreators.length + 1; // +1 for results count header
     
     return ListView.builder(
       controller: widget.scrollController,
@@ -58,7 +68,7 @@ class _CreatorListViewState extends State<CreatorListView> {
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              '${widget.filteredCreators.length} result${widget.filteredCreators.length == 1 ? '' : 's'}',
+              '${_filteredCreators.length} result${_filteredCreators.length == 1 ? '' : 's'}',
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -67,7 +77,7 @@ class _CreatorListViewState extends State<CreatorListView> {
           );
         }
         
-        if (widget.filteredCreators.isEmpty) {
+        if (_filteredCreators.isEmpty) {
           // No results message
           return Center(
             child: Padding(
@@ -91,7 +101,7 @@ class _CreatorListViewState extends State<CreatorListView> {
         }
         
         // Regular search result
-        final creator = widget.filteredCreators[index - 1];
+        final creator = _filteredCreators[index - 1];
         return CreatorTile(creator: creator, onCreatorSelected: widget.onCreatorSelected);
       },
     );
@@ -112,7 +122,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     
     // All creators section: header + all creators
-    itemCount += 1 + widget.filteredCreators.length;
+    itemCount += 1 + _filteredCreators.length;
 
     return ListView.builder(
       controller: widget.scrollController,
@@ -197,8 +207,8 @@ class _CreatorListViewState extends State<CreatorListView> {
     
     // All creators items
     final creatorIndex = index - currentIndex;
-    if (creatorIndex >= 0 && creatorIndex < widget.filteredCreators.length) {
-      return CreatorTile(creator: widget.filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected);
+    if (creatorIndex >= 0 && creatorIndex < _filteredCreators.length) {
+      return CreatorTile(creator: _filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected);
     }
     
     return const SizedBox.shrink();

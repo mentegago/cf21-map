@@ -73,19 +73,6 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
   }
 
   void _performSearch(String query) {
-    setState(() {
-      _hasSearched = query.isNotEmpty;
-      if (query.isEmpty) {
-        _filteredCreators = widget.creators;
-      } else {
-        final lowerQuery = query.toLowerCase();
-        _filteredCreators = widget.creators.where((creator) {
-          return creator.name.toLowerCase().contains(lowerQuery) ||
-              creator.booths.any((booth) => booth.toLowerCase().contains(lowerQuery));
-        }).toList();
-      }
-    });
-    
     _searchScrollController.jumpTo(0);
   }
 
@@ -135,12 +122,16 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                       const SizedBox(height: 80), // Space for search bar
                       // Results list
                       Expanded(
-                        child: CreatorListView(
-                          creators: widget.creators,
-                          filteredCreators: _filteredCreators,
-                          hasSearched: _hasSearched,
-                          onCreatorSelected: _handleCreatorTap,
-                          scrollController: _searchScrollController,
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _searchController,
+                          builder: (context, value, _) {
+                            return CreatorListView(
+                              creators: widget.creators,
+                              searchQuery: value.text,
+                              onCreatorSelected: _handleCreatorTap,
+                              scrollController: _searchScrollController,
+                            );
+                          },
                         ),
                       ),
                     ],

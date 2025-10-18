@@ -74,18 +74,6 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
 
   void _performSearch(String query) {
     _searchScrollController.jumpTo(0);
-    setState(() {
-      _hasSearched = query.isNotEmpty;
-      if (query.isEmpty) {
-        _filteredCreators = widget.creators;
-      } else {
-        final lowerQuery = query.toLowerCase();
-        _filteredCreators = widget.creators.where((creator) {
-          return creator.name.toLowerCase().contains(lowerQuery) ||
-              creator.booths.any((booth) => booth.toLowerCase().contains(lowerQuery));
-        }).toList();
-      }
-    });
   }
 
   void _handleCreatorSelected(Creator creator) {
@@ -216,12 +204,16 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   }
 
   Widget _buildCreatorList(BuildContext context, ThemeData theme) {
-    return CreatorListView(
-      creators: widget.creators,
-      filteredCreators: _filteredCreators,
-      hasSearched: _hasSearched,
-      onCreatorSelected: _handleCreatorSelected,
-      scrollController: _searchScrollController,
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _searchController,
+      builder: (context, value, _) {
+        return CreatorListView(
+          creators: widget.creators,
+          searchQuery: value.text,
+          onCreatorSelected: _handleCreatorSelected,
+          scrollController: _searchScrollController,
+        );
+      },
     );
   }
 
