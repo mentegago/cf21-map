@@ -75,8 +75,14 @@ class MapParser {
   
   static Future<List<Creator>> loadCreatorData() async {
     final jsonString = await rootBundle.loadString('data/creator-data.json');
-    final List<dynamic> jsonData = json.decode(jsonString);
-    return jsonData.map((json) => Creator.fromJson(json)).toList();
+    final dynamic jsonData = json.decode(jsonString);
+    
+    // Only handle new JSON structure with version and creators array, and sort by name
+    final List<dynamic> creatorsJson = jsonData['creators'] as List<dynamic>;
+    final creators = creatorsJson.map((json) => Creator.fromJson(json)).toList();
+    creators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    
+    return creators;
   }
 }
 
