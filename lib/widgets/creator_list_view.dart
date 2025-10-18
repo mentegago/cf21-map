@@ -4,7 +4,9 @@ import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/creator.dart';
+import '../services/creator_data_service.dart';
 
 class CreatorListView extends StatefulWidget {
   final List<Creator> creators;
@@ -27,49 +29,24 @@ class CreatorListView extends StatefulWidget {
 }
 
 class _CreatorListViewState extends State<CreatorListView> {
-  final _favoritesService = FavoritesService.instance;
-  late final _featuredCreator = widget.creators.firstWhereOrNull(
-    (c) => c.name.toLowerCase().contains('negi no tomodachi')
-  );
-  
-  List<Creator>? _favorites;
-
   @override
   void initState() {
     super.initState();
-    _loadFavorites();
-  }
-
-  Future<void> _loadFavorites() async {
-    if (!widget.hasSearched) {
-      final favorites = await _favoritesService.getFavorites();
-      if (mounted) {
-        setState(() {
-          _favorites = favorites;
-        });
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return AnimatedBuilder(
-      animation: _favoritesService,
-      builder: (context, child) {
-        _loadFavorites();
-        
-        if (widget.hasSearched) {
-          return _buildSearchResults(theme);
-        } else {
-          return _buildMainView(theme);
-        }
-      },
-    );
+    if (widget.hasSearched) {
+      return _buildSearchResults(context);
+    } else {
+      return _buildMainView(context);
+    }
   }
 
-  Widget _buildSearchResults(ThemeData theme) {
+  Widget _buildSearchResults(BuildContext context) {
+    final theme = Theme.of(context);
     final itemCount = widget.filteredCreators.isEmpty 
       ? 2 // results count header + no results message
       : widget.filteredCreators.length + 1; // +1 for results count header
@@ -122,7 +99,9 @@ class _CreatorListViewState extends State<CreatorListView> {
     );
   }
 
-  Widget _buildMainView(ThemeData theme) {
+  Widget _buildMainView(BuildContext context) {
+    final theme = Theme.of(context);
+    final favorites = context.select((FavoritesService favoritesService) => favoritesService.favorites);
     // Calculate total item count for ListView.builder
     int itemCount = 0;
     
@@ -130,8 +109,8 @@ class _CreatorListViewState extends State<CreatorListView> {
     itemCount += 2;
     
     // Favorites section: header + favorites (if any and storage is available)
-    if (_favoritesService.isStorageAvailable && (_favorites?.isNotEmpty ?? false)) {
-      itemCount += 1 + (_favorites!.length);
+    if (favorites.isNotEmpty) {
+      itemCount += 1 + favorites.length;
     }
     
     // All creators section: header + all creators
@@ -141,12 +120,12 @@ class _CreatorListViewState extends State<CreatorListView> {
       controller: widget.scrollController,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        return _buildItemAtIndex(index, theme);
+        return _buildItemAtIndex(index, theme, favorites);
       },
     );
   }
 
-  Widget _buildItemAtIndex(int index, ThemeData theme) {
+  Widget _buildItemAtIndex(int index, ThemeData theme, List<Creator> favorites) {
     int currentIndex = 0;
     
     // Featured section
@@ -167,14 +146,17 @@ class _CreatorListViewState extends State<CreatorListView> {
     currentIndex++;
     
     if (index == 1) {
-      return _featuredCreator != null 
-        ? CreatorTileFeatured(creator: _featuredCreator!, onCreatorSelected: widget.onCreatorSelected) 
+      final featuredCreator = widget.creators.firstWhereOrNull(
+        (c) => c.id == 5450
+      );
+      return featuredCreator != null 
+        ? CreatorTileFeatured(creator: featuredCreator, onCreatorSelected: widget.onCreatorSelected) 
         : const SizedBox.shrink();
     }
     currentIndex++;
     
     // Favorites section
-    if (_favoritesService.isStorageAvailable && (_favorites?.isNotEmpty ?? false)) {
+    if (favorites.isNotEmpty) {
       if (index == 2) {
         return Padding(
           padding: const EdgeInsets.all(16),
@@ -192,10 +174,10 @@ class _CreatorListViewState extends State<CreatorListView> {
       currentIndex++;
       
       final favoriteIndex = index - 3;
-      if (favoriteIndex >= 0 && favoriteIndex < _favorites!.length) {
-        return CreatorTile(creator: _favorites![favoriteIndex], onCreatorSelected: widget.onCreatorSelected);
+      if (favoriteIndex >= 0 && favoriteIndex < favorites.length) {
+        return CreatorTile(creator: favorites[favoriteIndex], onCreatorSelected: widget.onCreatorSelected);
       }
-      currentIndex += _favorites!.length;
+      currentIndex += favorites.length;
     }
     
     // All creators section

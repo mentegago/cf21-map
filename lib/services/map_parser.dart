@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../models/map_cell.dart';
-import '../models/creator.dart';
-import 'creator_data_service.dart';
 
 class MapParser {
   static Future<List<List<String>>> loadMapData() async {
@@ -74,26 +72,5 @@ class MapParser {
     return mergedCells;
   }
   
-  static Future<List<Creator>> loadCreatorData() async {
-    // Try loading from cache first
-    final cachedCreators = await CreatorDataService.getCachedCreatorData();
-    if (cachedCreators != null && cachedCreators.isNotEmpty) {
-      // Sort cached creators by name
-      final sortedCreators = List<Creator>.from(cachedCreators);
-      sortedCreators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      return sortedCreators;
-    }
-
-    // Fallback to bundled data
-    final jsonString = await rootBundle.loadString('data/creator-data-initial.json');
-    final dynamic jsonData = json.decode(jsonString);
-    
-    // Only handle new JSON structure with version and creators array, and sort by name
-    final List<dynamic> creatorsJson = jsonData['creators'] as List<dynamic>;
-    final creators = creatorsJson.map((json) => Creator.fromJson(json)).toList();
-    creators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
-    return creators;
-  }
 }
 

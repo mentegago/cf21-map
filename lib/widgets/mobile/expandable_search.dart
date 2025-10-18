@@ -45,6 +45,14 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
   @override
   void didUpdateWidget(ExpandableSearch oldWidget) {
     super.didUpdateWidget(oldWidget);
+    
+    // Update filtered creators when creators list changes
+    if (oldWidget.creators != widget.creators) {
+      setState(() {
+        _filteredCreators = widget.creators;
+      });
+    }
+    
     // Reset search when detail sheet is closed (selectedCreator becomes null)
     if (oldWidget.selectedCreator != null && widget.selectedCreator == null) {
       setState(() {

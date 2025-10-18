@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:html' as html;
 import '../services/map_parser.dart';
-import '../services/version_service.dart';
 import '../services/creator_data_service.dart';
 import '../widgets/map_viewer.dart';
 import '../widgets/mobile/creator_detail_sheet.dart';
@@ -23,17 +23,12 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMixin {
   List<MergedCell>? _mergedCells;
-  List<Creator>? _creators;
-  Map<String, List<Creator>>? _boothToCreators;
   int _rows = 0;
   int _cols = 0;
   bool _isLoading = true;
   String? _error;
-  List<String>? _highlightedBooths;
-  Creator? _selectedCreator;
   late AnimationController _detailAnimationController;
   late Animation<Offset> _detailSlideAnimation;
-  Timer? _updateTimer;
 
   @override
   void initState() {
@@ -50,51 +45,32 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     ));
-    _loadData();
-    _startPeriodicUpdateCheck();
+    _loadMapData();
   }
 
   @override
   void dispose() {
     _detailAnimationController.dispose();
-    _updateTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadMapData() async {
     try {
       final startTime = DateTime.now();
       
-      // Load map and creator data in parallel
-      final results = await Future.wait([
-        MapParser.loadMapData(),
-        MapParser.loadCreatorData(),
-      ]);
+      // Load map data
+      final grid = await MapParser.loadMapData();
       
-      final grid = results[0] as List<List<String>>;
-      final creators = results[1] as List<Creator>;
-      
-      print('Data loaded in ${DateTime.now().difference(startTime).inMilliseconds}ms');
+      print('Map data loaded in ${DateTime.now().difference(startTime).inMilliseconds}ms');
       
       final mergeStart = DateTime.now();
       final merged = MapParser.mergeCells(grid);
       print('Cells merged in ${DateTime.now().difference(mergeStart).inMilliseconds}ms');
       print('Total cells: ${grid.length * (grid.isEmpty ? 0 : grid[0].length)}');
       print('Merged to: ${merged.length} cells');
-      print('Creators loaded: ${creators.length}');
-      
-      // Build booth-to-creators mapping
-      final boothMap = <String, List<Creator>>{};
-      for (final creator in creators) {
-        for (final booth in creator.booths) {
-          boothMap.putIfAbsent(booth, () => []).add(creator);
-        }
-      }
       
       setState(() {
         _mergedCells = merged;
-        _creators = creators;
-        _boothToCreators = boothMap;
         _rows = grid.length;
         _cols = grid.isEmpty ? 0 : grid[0].length;
         _isLoading = false;
@@ -102,9 +78,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       
       // Handle query parameter if booth is specified in URL
       _handleQueryParameters();
-      
-      // Check for creator data updates after initial load
-      _checkAndUpdateCreatorData();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -114,25 +87,27 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   }
 
   void _handleCreatorSelected(Creator creator, {bool fromSearch = true}) {
-    setState(() {
-      _selectedCreator = creator;
-      _highlightedBooths = creator.booths;
-    });
+    final creatorProvider = context.read<CreatorDataProvider>();
+    creatorProvider.setSelectedCreator(creator);
     _detailAnimationController.forward();
   }
 
   void _clearSelection() async {
+    final creatorProvider = context.read<CreatorDataProvider>();
     await _detailAnimationController.reverse();
-    setState(() {
-      _selectedCreator = null;
-      _highlightedBooths = null;
-    });
+    if (mounted) {
+      creatorProvider.setSelectedCreator(null);
+    }
   }
 
   void _handleBoothTap(String? boothId) {
-    if (boothId == null || _boothToCreators == null) return;
+    if (boothId == null) return;
     
-    final creators = _boothToCreators![boothId];
+    final creatorProvider = context.read<CreatorDataProvider>();
+    final boothToCreators = creatorProvider.boothToCreators;
+    if (boothToCreators == null) return;
+    
+    final creators = boothToCreators[boothId];
     if (creators == null || creators.isEmpty) return;
     
     if (creators.length == 1) {
@@ -156,25 +131,29 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       final uri = Uri.parse(html.window.location.href);
       final creatorParam = uri.queryParameters['creator'];
       
-      if (creatorParam != null && creatorParam.isNotEmpty && _creators != null) {
+      if (creatorParam != null && creatorParam.isNotEmpty) {
         // Decode and normalize name (replace + with space, trim)
         final searchName = Uri.decodeComponent(creatorParam.replaceAll('+', ' ')).trim().toLowerCase();
         
         // Small delay to ensure UI is ready
         Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted && _creators != null) {
-            // Find creator by name (case-insensitive, partial match)
-            final creator = _creators!.firstWhere(
-              (c) => c.name.toLowerCase().contains(searchName),
-              orElse: () => _creators!.firstWhere(
-                (c) => c.name.toLowerCase() == searchName,
-                orElse: () => _creators!.first, // fallback, won't be used if null check below
-              ),
-            );
-            
-            // Only select if we found a match
-            if (creator.name.toLowerCase().contains(searchName)) {
-              _handleCreatorSelected(creator, fromSearch: true);
+          if (mounted) {
+            final creatorProvider = context.read<CreatorDataProvider>();
+            final creators = creatorProvider.creators;
+            if (creators != null && creators.isNotEmpty) {
+              // Find creator by name (case-insensitive, partial match)
+              final creator = creators.firstWhere(
+                (c) => c.name.toLowerCase().contains(searchName),
+                orElse: () => creators.firstWhere(
+                  (c) => c.name.toLowerCase() == searchName,
+                  orElse: () => creators.first, // fallback, won't be used if null check below
+                ),
+              );
+              
+              // Only select if we found a match
+              if (creator.name.toLowerCase().contains(searchName)) {
+                _handleCreatorSelected(creator, fromSearch: true);
+              }
             }
           }
         });
@@ -185,135 +164,67 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     }
   }
 
-  void _startPeriodicUpdateCheck() {
-    // Check for updates every hour
-    _updateTimer = Timer.periodic(const Duration(hours: 1), (timer) {
-      _checkAndUpdateCreatorData();
-    });
-  }
-
-  Future<void> _checkAndUpdateCreatorData() async {
-    try {
-      // Fetch version info
-      final versionInfo = await VersionService.fetchVersionInfo();
-      if (versionInfo == null) {
-        return;
-      }
-
-      // Check if remote version is newer
-      final isNewer = await CreatorDataService.isRemoteVersionNewer(versionInfo.creatorDataVersion);
-      if (!isNewer) return;
-
-      // Show updating snackbar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Updating creator booth list'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      // Fetch new creator data
-      final newCreators = await CreatorDataService.fetchRemoteCreatorData();
-      if (newCreators == null || newCreators.isEmpty) {
-        return;
-      }
-
-      // Sort creators by name
-      final sortedCreators = List<Creator>.from(newCreators);
-      sortedCreators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
-      // Check if current selection still exists
-      Creator? preservedSelection;
-      if (_selectedCreator != null) {
-        try {
-          preservedSelection = sortedCreators.firstWhere(
-            (c) => c.id == _selectedCreator!.id,
-          );
-        } catch (e) {
-          // Creator no longer exists, will clear selection
-        }
-      }
-
-      // Build new booth mapping
-      final boothMap = <String, List<Creator>>{};
-      for (final creator in sortedCreators) {
-        for (final booth in creator.booths) {
-          boothMap.putIfAbsent(booth, () => []).add(creator);
-        }
-      }
-
-      // Update state
-      if (mounted) {
-        setState(() {
-          _creators = sortedCreators;
-          _boothToCreators = boothMap;
-          _selectedCreator = preservedSelection;
-          _highlightedBooths = preservedSelection?.booths;
-        });
-
-        // Show updated snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Creator booth list updated'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error checking/updating creator data: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 768; // Breakpoint for desktop layout
 
+    final isLoading = context.select((CreatorDataProvider creatorProvider) => creatorProvider.isLoading);
+    final error = context.select((CreatorDataProvider creatorProvider) => creatorProvider.error);
+    
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error, color: Colors.red, size: 48),
-                        const SizedBox(height: 16),
-                        Text('Error loading map: $_error'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _isLoading = true;
-                              _error = null;
-                            });
-                            _loadData();
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
+      body: Stack(
+        children: [
+          _isLoading || isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null || error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error, color: Colors.red, size: 48),
+                          const SizedBox(height: 16),
+                          Text('Error loading map: ${_error ?? error}'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _isLoading = true;
+                                _error = null;
+                              });
+                              _loadMapData();
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                )
-              : isDesktop
-                  ? _buildDesktopLayout()
-                  : _buildMobileLayout(),
+                  )
+                : isDesktop
+                    ? _buildDesktopLayout(context)
+                    : _buildMobileLayout(context),
+          // Clean snackbar listener
+          _StatusSnackbarListener(),
+        ],
+      )
     );
   }
 
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(BuildContext context) {
+    final creators = context.select((CreatorDataProvider creatorProvider) => creatorProvider.creators);
+    final selectedCreator = context.select((CreatorDataProvider creatorProvider) => creatorProvider.selectedCreator);
+
     return Row(
       children: [
-        if (_creators != null)
+        if (creators != null)
           DesktopSidebar(
-            creators: _creators!,
-            selectedCreator: _selectedCreator,
+            creators: creators,
+            selectedCreator: selectedCreator,
             onCreatorSelected: _handleCreatorSelected,
-            onClear: _selectedCreator != null ? _clearSelection : null,
+            onClear: selectedCreator != null ? _clearSelection : null,
           ),
         
         // Map viewer
@@ -324,7 +235,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 mergedCells: _mergedCells!,
                 rows: _rows,
                 cols: _cols,
-                highlightedBooths: _highlightedBooths,
+                highlightedBooths: selectedCreator?.booths,
                 onBoothTap: _handleBoothTap,
               ),
               const GitHubButton(isDesktop: true),
@@ -336,37 +247,81 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(BuildContext context) {
+    final creators = context.select((CreatorDataProvider creatorProvider) => creatorProvider.creators);
+    final selectedCreator = context.select((CreatorDataProvider creatorProvider) => creatorProvider.selectedCreator); 
+
     return Stack(
       children: [
         MapViewer(
           mergedCells: _mergedCells!,
           rows: _rows,
           cols: _cols,
-          highlightedBooths: _highlightedBooths,
+          highlightedBooths: selectedCreator?.booths,
           onBoothTap: _handleBoothTap,
         ),
         
         const GitHubButton(isDesktop: false),
         const VersionNotification(isDesktop: false),
         
-        if (_selectedCreator != null)
+        if (selectedCreator != null)
           SlideTransition(
             position: _detailSlideAnimation,
             child: CreatorDetailSheet(
-              creator: _selectedCreator!,
+              creator: selectedCreator,
               onClose: _clearSelection,
             ),
           ),
 
-        if (_creators != null)
+        if (creators != null)
           ExpandableSearch(
-            creators: _creators!,
+            creators: creators,
             onCreatorSelected: _handleCreatorSelected,
-            onClear: _selectedCreator != null ? _clearSelection : null,
-            selectedCreator: _selectedCreator,
+            onClear: selectedCreator != null ? _clearSelection : null,
+            selectedCreator: selectedCreator,
           ),
       ],
+    );
+  }
+}
+
+class _StatusSnackbarListener extends StatefulWidget {
+  @override
+  _StatusSnackbarListenerState createState() => _StatusSnackbarListenerState();
+}
+
+class _StatusSnackbarListenerState extends State<_StatusSnackbarListener> {
+  CreatorDataStatus? _previousStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<CreatorDataProvider>(
+      builder: (context, provider, child) {
+        // Only show snackbar when status actually changes
+        if (_previousStatus != provider.status) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              if (provider.status == CreatorDataStatus.updating) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Updating creator booth list'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } else if (provider.status == CreatorDataStatus.updated) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Creator booth list updated'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            }
+          });
+          _previousStatus = provider.status;
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 }

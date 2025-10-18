@@ -48,6 +48,13 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   void didUpdateWidget(DesktopSidebar oldWidget) {
     super.didUpdateWidget(oldWidget);
     
+    // Update filtered creators when creators list changes
+    if (oldWidget.creators != widget.creators) {
+      setState(() {
+        _filteredCreators = widget.creators;
+      });
+    }
+    
     // Hide search list when creator is selected (from search list or map)
     // This handles both initial selection and changing selection
     if (widget.selectedCreator != null && _showSearchList) {

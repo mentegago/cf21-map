@@ -1,25 +1,90 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/creator.dart';
+import 'creator_data_service.dart';
 
 class FavoritesService extends ChangeNotifier {
   static const String _favoritesKey = 'favorite_creators';
-  static FavoritesService? _instance;
+  static const String _favoritesIdsKey = 'favorite_creator_ids';
+  static const String _migrationKey = 'favorites_migrated';
   static SharedPreferences? _prefs;
 
-  // Singleton pattern
-  static FavoritesService get instance {
-    _instance ??= FavoritesService._();
-    return _instance!;
+  // Local state for fast synchronous access
+  final Set<int> _favoriteIds = <int>{};
+  
+  // Debounce timer for storage updates
+  Timer? _storageUpdateTimer;
+  static const Duration _debounceDelay = Duration(milliseconds: 500);
+
+  CreatorDataProvider creatorDataProvider;
+
+  FavoritesService(this.creatorDataProvider);
+
+  List<Creator> get favorites {
+    final favoriteCreators = <Creator>[];
+    for (final id in _favoriteIds) {
+      final creator = creatorDataProvider.getCreatorById(id);
+      if (creator != null) {
+        favoriteCreators.add(creator);
+      }
+    }
+    // Sort by name (case-insensitive)
+    favoriteCreators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return favoriteCreators;
   }
 
-  FavoritesService._();
+  // Synchronous methods for fast access
+  void addFavorite(int creatorId) {
+    if (_favoriteIds.add(creatorId)) {
+      notifyListeners();
+      _scheduleStorageUpdate();
+    }
+  }
+
+  void removeFavorite(int creatorId) {
+    if (_favoriteIds.remove(creatorId)) {
+      notifyListeners();
+      _scheduleStorageUpdate();
+    }
+  }
+
+  bool isFavorited(int creatorId) {
+    return _favoriteIds.contains(creatorId);
+  }
+
+  // Debounced storage update
+  void _scheduleStorageUpdate() {
+    _storageUpdateTimer?.cancel();
+    _storageUpdateTimer = Timer(_debounceDelay, () {
+      _updateStorage();
+    });
+  }
+
+  // Asynchronous storage update
+  Future<void> _updateStorage() async {
+    await _initPrefs();
+    if (_prefs == null) return;
+    
+    try {
+      await _prefs!.setStringList(
+        _favoritesIdsKey, 
+        _favoriteIds.map((id) => id.toString()).toList()
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to save favorite IDs: $e');
+      }
+    }
+  }
 
   // Initialize SharedPreferences
   Future<void> _initPrefs() async {
     try {
       _prefs ??= await SharedPreferences.getInstance();
+      // Run migration if needed
+      await _migrateFavoritesIfNeeded();
     } catch (e) {
       // Handle cases where SharedPreferences is not available (e.g., HTTP, private browsing)
       if (kDebugMode) {
@@ -30,103 +95,75 @@ class FavoritesService extends ChangeNotifier {
     }
   }
 
-  /// Add a creator to favorites
-  /// Returns true if successfully added, false if already exists
-  Future<bool> addFavorite(Creator creator) async {
-    await _initPrefs();
+  /// Migrate old favorites (full Creator objects) to new ID-based system
+  Future<void> _migrateFavoritesIfNeeded() async {
+    if (_prefs == null) return;
     
-    final favorites = await getFavorites();
+    final migrated = _prefs!.getBool(_migrationKey) ?? false;
+    if (migrated) return;
     
-    // Check if creator is already in favorites
-    if (favorites.any((fav) => fav.name == creator.name)) {
-      return false;
-    }
-    
-    // Add creator to favorites
-    favorites.add(creator);
-    
-    // Save to persistent storage
-    await _saveFavorites(favorites);
-    
-    // Notify listeners of the change
-    notifyListeners();
-    return true;
-  }
-
-  /// Remove a creator from favorites
-  /// Returns true if successfully removed, false if not found
-  Future<bool> removeFavorite(String creatorName) async {
-    await _initPrefs();
-    
-    final favorites = await getFavorites();
-    
-    // Find and remove the creator
-    final initialLength = favorites.length;
-    favorites.removeWhere((creator) => creator.name == creatorName);
-    
-    // If length changed, creator was removed
-    if (favorites.length < initialLength) {
-      await _saveFavorites(favorites);
+    try {
+      final oldFavoritesJson = _prefs!.getStringList(_favoritesKey) ?? [];
+      if (oldFavoritesJson.isNotEmpty) {
+        // Convert old favorites to IDs
+        final favoriteIds = <int>[];
+        for (final jsonString in oldFavoritesJson) {
+          try {
+            final creatorJson = jsonDecode(jsonString) as Map<String, dynamic>;
+            final id = creatorJson['id'] as int?;
+            if (id != null) {
+              favoriteIds.add(id);
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('Failed to migrate favorite: $e');
+            }
+          }
+        }
+        
+        // Save new ID-based favorites
+        if (favoriteIds.isNotEmpty) {
+          await _prefs!.setStringList(_favoritesIdsKey, favoriteIds.map((id) => id.toString()).toList());
+          if (kDebugMode) {
+            print('Migrated ${favoriteIds.length} favorites to ID-based system');
+          }
+        }
+      }
       
-      // Notify listeners of the change
-      notifyListeners();
-      return true;
+      // Mark migration as complete
+      await _prefs!.setBool(_migrationKey, true);
+      
+      // Clean up old favorites data
+      await _prefs!.remove(_favoritesKey);
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('Migration failed: $e');
+      }
     }
-    
-    return false;
   }
 
-  /// Get all favorited creators, sorted by name
-  Future<List<Creator>> getFavorites() async {
+
+  /// Get favorite creator IDs
+  Future<List<int>> _getFavoriteIds() async {
     await _initPrefs();
     
-    // If SharedPreferences is not available, return empty list
     if (_prefs == null) {
       return [];
     }
     
-    final favoritesJson = _prefs!.getStringList(_favoritesKey) ?? [];
-    
-    // Convert JSON strings back to Creator objects
-    final favorites = favoritesJson
-        .map((jsonString) => Creator.fromJson(jsonDecode(jsonString)))
-        .toList();
-    
-    // Sort by name (case-insensitive)
-    favorites.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    
-    return favorites;
+    final idsJson = _prefs!.getStringList(_favoritesIdsKey) ?? [];
+    return idsJson.map((idString) => int.tryParse(idString)).whereType<int>().toList();
   }
 
-  /// Check if a creator is favorited
-  Future<bool> isFavorite(String creatorName) async {
-    final favorites = await getFavorites();
-    return favorites.any((creator) => creator.name == creatorName);
-  }
-
-  /// Clear all favorites
-  Future<void> clearFavorites() async {
-    await _initPrefs();
-    
-    if (_prefs != null) {
-      try {
-        await _prefs!.remove(_favoritesKey);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Failed to clear favorites: $e');
-        }
-      }
-    }
-    
-    // Notify listeners of the change
-    notifyListeners();
+  @override
+  void dispose() {
+    _storageUpdateTimer?.cancel();
+    super.dispose();
   }
 
   /// Get the number of favorited creators
-  Future<int> getFavoriteCount() async {
-    final favorites = await getFavorites();
-    return favorites.length;
-  }
+  int get favoriteCount => _favoriteIds.length;
 
   /// Check if persistent storage is available
   bool get isStorageAvailable => _prefs != null;
@@ -142,56 +179,15 @@ class FavoritesService extends ChangeNotifier {
   /// Initialize and check storage availability
   Future<void> initialize() async {
     await _initPrefs();
+    
+    // Load favorites from storage into local state
+    final favoriteIds = await _getFavoriteIds();
+    _favoriteIds.clear();
+    _favoriteIds.addAll(favoriteIds);
+    
     if (kDebugMode) {
-      print('FavoritesService: ${storageStatus}');
+      print('FavoritesService: $storageStatus, loaded ${_favoriteIds.length} favorites');
     }
-  }
-
-  /// Save favorites to persistent storage
-  Future<void> _saveFavorites(List<Creator> favorites) async {
-    await _initPrefs();
-    
-    // If SharedPreferences is not available, skip saving
-    if (_prefs == null) {
-      if (kDebugMode) {
-        print('Cannot save favorites: SharedPreferences not available');
-      }
-      return;
-    }
-    
-    // Convert Creator objects to JSON strings
-    final favoritesJson = favorites
-        .map((creator) => jsonEncode(_creatorToJson(creator)))
-        .toList();
-    
-    try {
-      await _prefs!.setStringList(_favoritesKey, favoritesJson);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to save favorites: $e');
-      }
-    }
-  }
-
-  /// Convert Creator object to JSON-compatible Map
-  Map<String, dynamic> _creatorToJson(Creator creator) {
-    return {
-      'name': creator.name,
-      'booths': creator.booths,
-      'day': creator.day,
-      'profileImage': creator.profileImage,
-      'informations': creator.informations
-          .map((info) => {
-                'title': info.title,
-                'content': info.content,
-              })
-          .toList(),
-      'urls': creator.urls
-          .map((url) => {
-                'title': url.title,
-                'url': url.url,
-              })
-          .toList(),
-    };
   }
 }
+

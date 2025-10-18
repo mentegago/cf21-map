@@ -16,6 +16,7 @@ dependencies:
   shared_preferences: ^2.5.3
   collection: ^1.19.1
   http: ^1.2.2
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
