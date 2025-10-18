@@ -24,14 +24,11 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _searchScrollController = ScrollController();
-  List<Creator> _filteredCreators = [];
   bool _isExpanded = false;
-  bool _hasSearched = false;
 
   @override
   void initState() {
     super.initState();
-    _filteredCreators = widget.creators;
     
     // Listen to focus changes to expand (but not collapse)
     _focusNode.addListener(() {
@@ -47,19 +44,10 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
   void didUpdateWidget(ExpandableSearch oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // Update filtered creators when creators list changes
-    if (oldWidget.creators != widget.creators) {
-      setState(() {
-        _filteredCreators = widget.creators;
-      });
-    }
-    
     // Reset search when detail sheet is closed (selectedCreator becomes null)
     if (oldWidget.selectedCreator != null && widget.selectedCreator == null) {
       setState(() {
         _searchController.clear();
-        _hasSearched = false;
-        _filteredCreators = widget.creators;
         _isExpanded = false;
       });
     }
@@ -92,8 +80,6 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
   void _handleClear() {
     setState(() {
       _searchController.clear();
-      _hasSearched = false;
-      _filteredCreators = widget.creators;
     });
     _collapse();
     widget.onClear?.call();
@@ -201,13 +187,19 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                       ),
                     ),
                   ),
-                  if (_searchController.text.isNotEmpty && widget.onClear != null)
-                    IconButton(
-                      icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
-                      onPressed: _handleClear,
-                    )
-                  else
-                    const SizedBox(width: 8),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _searchController,
+                    builder: (context, value, _) {
+                      if (value.text.isNotEmpty && widget.onClear != null) {
+                        return IconButton(
+                          icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
+                          onPressed: _handleClear,
+                        );
+                      } else {
+                        return const SizedBox(width: 8);
+                      }
+                    },
+                  )
                 ],
               ),
             ),

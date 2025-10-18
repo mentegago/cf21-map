@@ -25,14 +25,11 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _searchScrollController = ScrollController();
-  List<Creator> _filteredCreators = [];
-  bool _hasSearched = false;
   bool _showSearchList = true;
 
   @override
   void initState() {
     super.initState();
-    _filteredCreators = widget.creators;
     
     // Listen to focus changes - show search list when search is focused
     _searchFocusNode.addListener(() {
@@ -47,13 +44,6 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   @override
   void didUpdateWidget(DesktopSidebar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    // Update filtered creators when creators list changes
-    if (oldWidget.creators != widget.creators) {
-      setState(() {
-        _filteredCreators = widget.creators;
-      });
-    }
     
     // Hide search list when creator is selected (from search list or map)
     // This handles both initial selection and changing selection

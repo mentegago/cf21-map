@@ -6,7 +6,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/creator.dart';
-import '../services/creator_data_service.dart';
 
 class CreatorListView extends StatefulWidget {
   final List<Creator> creators;
@@ -27,28 +26,50 @@ class CreatorListView extends StatefulWidget {
 }
 
 class _CreatorListViewState extends State<CreatorListView> {
+  List<Creator>? _cachedFilteredCreators;
+  String? _lastSearchQuery;
+  
   List<Creator> get _filteredCreators {
-    if (widget.searchQuery.isNotEmpty) {
-      final lowerQuery = widget.searchQuery.toLowerCase();
-      return 
-        widget.creators.where((creator) {
-          if (creator.name.toLowerCase().contains(lowerQuery)) {
-            return true;
-          }
-
-          if (creator.booths.any((booth) => _filterBoothFormat(booth).startsWith(_filterBoothFormat(lowerQuery)))) {
-            return true;
-          }
-
-          if (creator.fandoms.any((fandom) => fandom.toLowerCase().contains(lowerQuery))) {
-            return true;
-          }
-
-          return false;
-        })
-        .toList();
+    // Return cached results if search query hasn't changed
+    if (_lastSearchQuery == widget.searchQuery && _cachedFilteredCreators != null) {
+      return _cachedFilteredCreators!;
     }
-    return widget.creators;
+    
+    // Update cache
+    _lastSearchQuery = widget.searchQuery;
+    
+    if (widget.searchQuery.isEmpty) {
+      _cachedFilteredCreators = widget.creators;
+      return _cachedFilteredCreators!;
+    }
+    
+    final lowerQuery = widget.searchQuery.toLowerCase();
+    final filteredBoothQuery = _filterBoothFormat(lowerQuery);
+    
+    _cachedFilteredCreators = widget.creators.where((creator) {
+      // Name matching
+      if (creator.name.toLowerCase().contains(lowerQuery)) {
+        return true;
+      }
+
+      // Booth matching
+      for (final booth in creator.booths) {
+        if (_filterBoothFormat(booth).startsWith(filteredBoothQuery)) {
+          return true;
+        }
+      }
+
+      // Fandom matching
+      for (final fandom in creator.fandoms) {
+        if (fandom.toLowerCase().contains(lowerQuery)) {
+          return true;
+        }
+      }
+
+      return false;
+    }).toList();
+    
+    return _cachedFilteredCreators!;
   }
 
   String _filterBoothFormat(String query) {
@@ -63,8 +84,15 @@ class _CreatorListViewState extends State<CreatorListView> {
   }
 
   @override
-  void initState() {
-    super.initState();
+  void didUpdateWidget(CreatorListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // If creators list has changed, clear cache and trigger rebuild
+    if (oldWidget.creators != widget.creators) {
+      _cachedFilteredCreators = null;
+      _lastSearchQuery = null;
+      setState(() {});
+    }
   }
 
   @override
