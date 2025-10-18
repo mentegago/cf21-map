@@ -18,44 +18,7 @@ Aplikasi web untuk melihat peta booth creator di acara Comifuro 21 (CF21).
 
 ## Menambahkan Informasi Booth
 
-Jika ingin menambahkan informasi booth, data list booth ada di `data/creator-data.json`, dengan format sebagai berikut:
-
-```json
-{
-"name": "Nama booth",
-"booths": [
-    "BOOTH-1",
-    "BOOTH-2",
-    "BOOTH-3",
-    "BOOTH-4"
-],
-"day": "SAT/SUN/BOTH",
-"profileImage": "assets/profilepicture.jpg",
-"informations": [
-    {
-    "title": "Judul dari section informasinya",
-    "content": "Isi dari sectionnya"
-    },
-    {
-    "title": "Judul dari section informasinya",
-    "content": "Isi dari sectionnya"
-    }
-],
-"urls": [
-    {
-    "title": "Judul link 2",
-    "url": "https://example.com"
-    },
-    {
-    "title": "Judul link 2",
-    "url": "https://example.com"
-    }
-]
-}
-```
-*`profileImage`, `informations`, dan `urls` opsional.
-
-Kalau ingin menambahkan profile picture, silakan tambahkan di folder `assets/` dan update JSON booth sesuai format di atas. Mohon minimalisir sizenya ya, kalau bisa under 5KB 🙇. Setelah itu, silakan submit PR.
+Jika ingin menambahkan informasi booth, silakan update `config/override.json` override di repository [https://github.com/mentegago/cf21-map-config](https://github.com/mentegago/cf21-map-config)
 
 ## Build (Khusus buat developer)
 
