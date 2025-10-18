@@ -72,7 +72,7 @@ class CreatorDetailContent extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
 
           ElevatedButton.icon(
             icon: const Icon(Icons.open_in_new),
@@ -232,6 +232,8 @@ class CreatorDetailContent extends StatelessWidget {
               );
             }).toList(),
           ),
+
+          const SizedBox(height: 32),
         ],
       ),
     );
