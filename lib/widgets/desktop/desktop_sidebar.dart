@@ -171,23 +171,28 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
             ),
           ),
           // Show clear search button if search field is not empty
-          if (_searchController.text.isNotEmpty)
-            IconButton(
-              icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
-              onPressed: () {
-                _searchController.clear();
-                widget.onClear?.call();
-                _performSearch('');
-              },
-            )
-          // Show close creator button if creator is selected
-          else if (widget.selectedCreator != null)
-            IconButton(
-              icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
-              onPressed: widget.onClear,
-            )
-          else
-            const SizedBox(width: 8),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchController,
+            builder: (context, value, _) {
+              if (value.text.isNotEmpty) {
+                return IconButton(
+                  icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
+                  onPressed: () {
+                    _searchController.clear();
+                    widget.onClear?.call();
+                    _performSearch('');
+                  },
+                );
+              } else if (widget.selectedCreator != null) {
+                return IconButton(
+                  icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
+                  onPressed: widget.onClear,
+                );
+              } else {
+                return const SizedBox(width: 8);
+              }
+            },
+          ),
         ],
       ),
     );
