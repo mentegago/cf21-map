@@ -27,16 +27,39 @@ class CreatorListView extends StatefulWidget {
 }
 
 class _CreatorListViewState extends State<CreatorListView> {
-  
   List<Creator> get _filteredCreators {
     if (widget.searchQuery.isNotEmpty) {
       final lowerQuery = widget.searchQuery.toLowerCase();
-      return widget.creators.where((creator) {
-        return creator.name.toLowerCase().contains(lowerQuery) ||
-            creator.booths.any((booth) => booth.toLowerCase().contains(lowerQuery));
-      }).toList();
+      return 
+        widget.creators.where((creator) {
+          if (creator.name.toLowerCase().contains(lowerQuery)) {
+            return true;
+          }
+
+          if (creator.booths.any((booth) => _filterBoothFormat(booth).startsWith(_filterBoothFormat(lowerQuery)))) {
+            return true;
+          }
+
+          if (creator.fandoms.any((fandom) => fandom.toLowerCase().contains(lowerQuery))) {
+            return true;
+          }
+
+          return false;
+        })
+        .toList();
     }
     return widget.creators;
+  }
+
+  String _filterBoothFormat(String query) {
+    // Remove non-alphanumeric chars, make lower, and drop zeroes after letters (e.g. "AB08" => "ab8")
+    return query
+      .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
+      .replaceAllMapped(
+        RegExp(r'([a-zA-Z])0+'), 
+        (m) => m.group(1) ?? ''
+      )
+      .toLowerCase();
   }
 
   @override
