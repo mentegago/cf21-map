@@ -23,6 +23,7 @@ class ExpandableSearch extends StatefulWidget {
 class _ExpandableSearchState extends State<ExpandableSearch> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _searchScrollController = ScrollController();
   List<Creator> _filteredCreators = [];
   bool _isExpanded = false;
   bool _hasSearched = false;
@@ -84,6 +85,8 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
         }).toList();
       }
     });
+    
+    _searchScrollController.jumpTo(0);
   }
 
 
@@ -137,6 +140,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                           filteredCreators: _filteredCreators,
                           hasSearched: _hasSearched,
                           onCreatorSelected: _handleCreatorTap,
+                          scrollController: _searchScrollController,
                         ),
                       ),
                     ],
