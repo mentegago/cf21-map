@@ -4,16 +4,19 @@ import 'package:http/http.dart' as http;
 class VersionInfo {
   final int currentVersion;
   final String releaseNotes;
+  final int creatorDataVersion;
 
   VersionInfo({
     required this.currentVersion,
     required this.releaseNotes,
+    required this.creatorDataVersion,
   });
 
   factory VersionInfo.fromJson(Map<String, dynamic> json) {
     return VersionInfo(
       currentVersion: json['current_version'] as int,
       releaseNotes: json['release_notes'] as String,
+      creatorDataVersion: json['creator_data_version'] as int,
     );
   }
 }

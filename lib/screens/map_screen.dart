@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import '../services/map_parser.dart';
+import '../services/version_service.dart';
+import '../services/creator_data_service.dart';
 import '../widgets/map_viewer.dart';
 import '../widgets/mobile/creator_detail_sheet.dart';
 import '../widgets/mobile/expandable_search.dart';
@@ -10,6 +12,7 @@ import '../widgets/github_button.dart';
 import '../widgets/version_notification.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
+import 'dart:async';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -30,6 +33,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   Creator? _selectedCreator;
   late AnimationController _detailAnimationController;
   late Animation<Offset> _detailSlideAnimation;
+  Timer? _updateTimer;
 
   @override
   void initState() {
@@ -47,11 +51,13 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       reverseCurve: Curves.easeInCubic,
     ));
     _loadData();
+    _startPeriodicUpdateCheck();
   }
 
   @override
   void dispose() {
     _detailAnimationController.dispose();
+    _updateTimer?.cancel();
     super.dispose();
   }
 
@@ -96,6 +102,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       
       // Handle query parameter if booth is specified in URL
       _handleQueryParameters();
+      
+      // Check for creator data updates after initial load
+      _checkAndUpdateCreatorData();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -173,6 +182,87 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     } catch (e) {
       // Ignore errors in query parameter parsing
       print('Error parsing query parameters: $e');
+    }
+  }
+
+  void _startPeriodicUpdateCheck() {
+    // Check for updates every hour
+    _updateTimer = Timer.periodic(const Duration(hours: 1), (timer) {
+      _checkAndUpdateCreatorData();
+    });
+  }
+
+  Future<void> _checkAndUpdateCreatorData() async {
+    try {
+      // Fetch version info
+      final versionInfo = await VersionService.fetchVersionInfo();
+      if (versionInfo == null) {
+        return;
+      }
+
+      // Check if remote version is newer
+      final isNewer = await CreatorDataService.isRemoteVersionNewer(versionInfo.creatorDataVersion);
+      if (!isNewer) return;
+
+      // Show updating snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Updating creator booth list'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Fetch new creator data
+      final newCreators = await CreatorDataService.fetchRemoteCreatorData();
+      if (newCreators == null || newCreators.isEmpty) {
+        return;
+      }
+
+      // Sort creators by name
+      final sortedCreators = List<Creator>.from(newCreators);
+      sortedCreators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+      // Check if current selection still exists
+      Creator? preservedSelection;
+      if (_selectedCreator != null) {
+        try {
+          preservedSelection = sortedCreators.firstWhere(
+            (c) => c.id == _selectedCreator!.id,
+          );
+        } catch (e) {
+          // Creator no longer exists, will clear selection
+        }
+      }
+
+      // Build new booth mapping
+      final boothMap = <String, List<Creator>>{};
+      for (final creator in sortedCreators) {
+        for (final booth in creator.booths) {
+          boothMap.putIfAbsent(booth, () => []).add(creator);
+        }
+      }
+
+      // Update state
+      if (mounted) {
+        setState(() {
+          _creators = sortedCreators;
+          _boothToCreators = boothMap;
+          _selectedCreator = preservedSelection;
+          _highlightedBooths = preservedSelection?.booths;
+        });
+
+        // Show updated snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Creator booth list updated'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking/updating creator data: $e');
     }
   }
 
