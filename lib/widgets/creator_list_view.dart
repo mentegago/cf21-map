@@ -36,8 +36,6 @@ class _CreatorListViewState extends State<CreatorListView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     if (widget.hasSearched) {
       return _buildSearchResults(context);
     } else {
