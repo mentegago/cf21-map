@@ -23,7 +23,7 @@ class VersionInfo {
 
 class VersionService {
   static const String _versionUrl = 'https://cf21-config.nnt.gg/version.json';
-  static const int _clientVersion = 11; // Current client version
+  static const int _clientVersion = 12; // Current client version
 
   static Future<VersionInfo?> fetchVersionInfo() async {
     try {

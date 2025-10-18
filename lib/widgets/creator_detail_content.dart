@@ -254,8 +254,7 @@ class CreatorDetailContent extends StatelessWidget {
 
   void _shareCreator(BuildContext context) async {
     try {
-      final encodedName = Uri.encodeComponent(creator.name).toLowerCase();
-      final shareUrl = 'https://cf21.nnt.gg/?creator=$encodedName';
+      final shareUrl = 'https://cf21.nnt.gg/?creator_id=${creator.id}';
       
       await Clipboard.setData(ClipboardData(text: shareUrl));
 
@@ -279,7 +278,7 @@ class CreatorDetailContent extends StatelessWidget {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not copy link. Please copy manually from the URL bar.'),
+          content: Text('Could not copy link.'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 3),
         ),

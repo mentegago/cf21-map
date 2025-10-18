@@ -130,8 +130,19 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     try {
       final uri = Uri.parse(html.window.location.href);
       final creatorParam = uri.queryParameters['creator'];
+      final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
       
-      if (creatorParam != null && creatorParam.isNotEmpty) {
+      if (creatorIdParam != null) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!mounted) return;
+          final creatorProvider = context.read<CreatorDataProvider>();
+          final creator = creatorProvider.getCreatorById(creatorIdParam);
+          print('creator: ${creator?.name ?? 'null'}');
+          if (creator != null) {
+            _handleCreatorSelected(creator, fromSearch: true);
+          }
+        });
+      } else if (creatorParam != null && creatorParam.isNotEmpty) {
         // Decode and normalize name (replace + with space, trim)
         final searchName = Uri.decodeComponent(creatorParam.replaceAll('+', ' ')).trim().toLowerCase();
         
