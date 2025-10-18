@@ -53,6 +53,32 @@ class CreatorDetailContent extends StatelessWidget {
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    // Data source indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: creator.dataSource == DataSource.catalog
+                            ? Colors.blue.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: creator.dataSource == DataSource.catalog
+                              ? Colors.blue.withValues(alpha: 0.3)
+                              : Colors.orange.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        creator.dataSource.shortName,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: creator.dataSource == DataSource.catalog
+                              ? Colors.blue
+                              : Colors.orange,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

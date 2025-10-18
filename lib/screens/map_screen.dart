@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:html' as html;
 import '../services/map_parser.dart';
+import '../services/data_source_manager.dart';
 import '../widgets/map_viewer.dart';
 import '../widgets/mobile/creator_detail_sheet.dart';
 import '../widgets/mobile/expandable_search.dart';
@@ -8,6 +12,7 @@ import '../widgets/mobile/creator_selector_sheet.dart';
 import '../widgets/desktop/desktop_sidebar.dart';
 import '../widgets/github_button.dart';
 import '../widgets/version_notification.dart';
+import '../widgets/data_source_toggle.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
 
@@ -46,37 +51,52 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     ));
-    _loadData();
+
+    // Load data after the first frame to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+      // Listen to data source changes
+      context.read<DataSourceManager>().addListener(_onDataSourceChanged);
+    });
   }
 
   @override
   void dispose() {
+    // Remove listener
+    if (mounted) {
+      context.read<DataSourceManager>().removeListener(_onDataSourceChanged);
+    }
     _detailAnimationController.dispose();
     super.dispose();
+  }
+
+  void _onDataSourceChanged() {
+    // Reload data when data source changes
+    _loadData();
   }
 
   Future<void> _loadData() async {
     try {
       final startTime = DateTime.now();
-      
-      // Load map and creator data in parallel
-      final results = await Future.wait([
-        MapParser.loadMapData(),
-        MapParser.loadCreatorData(),
-      ]);
-      
-      final grid = results[0] as List<List<String>>;
-      final creators = results[1] as List<Creator>;
-      
+
+      // Get data source manager
+      final dataSourceManager = context.read<DataSourceManager>();
+
+      // Load map data
+      final grid = await MapParser.loadMapData();
+
+      // Get creators from data source manager (already loaded in main.dart)
+      final creators = dataSourceManager.allCreators;
+
       print('Data loaded in ${DateTime.now().difference(startTime).inMilliseconds}ms');
-      
+
       final mergeStart = DateTime.now();
       final merged = MapParser.mergeCells(grid);
       print('Cells merged in ${DateTime.now().difference(mergeStart).inMilliseconds}ms');
       print('Total cells: ${grid.length * (grid.isEmpty ? 0 : grid[0].length)}');
       print('Merged to: ${merged.length} cells');
       print('Creators loaded: ${creators.length}');
-      
+
       // Build booth-to-creators mapping
       final boothMap = <String, List<Creator>>{};
       for (final creator in creators) {
@@ -84,7 +104,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           boothMap.putIfAbsent(booth, () => []).add(creator);
         }
       }
-      
+
+
       setState(() {
         _mergedCells = merged;
         _creators = creators;
@@ -93,7 +114,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         _cols = grid.isEmpty ? 0 : grid[0].length;
         _isLoading = false;
       });
-      
+
       // Handle query parameter if booth is specified in URL
       _handleQueryParameters();
     } catch (e) {
@@ -121,15 +142,72 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   }
 
   void _handleBoothTap(String? boothId) {
-    if (boothId == null || _boothToCreators == null) return;
-    
+    print('\n=== BOOTH CLICK DEBUG ===');
+    print('[BoothClick] User clicked on booth: "$boothId"');
+
+    if (boothId == null) {
+      print('[BoothClick] ERROR: Booth ID is null');
+      return;
+    }
+
+    if (_boothToCreators == null) {
+      print('[BoothClick] ERROR: Booth-to-creators mapping not initialized');
+      return;
+    }
+
     final creators = _boothToCreators![boothId];
-    if (creators == null || creators.isEmpty) return;
-    
+    if (creators == null) {
+      print('[BoothClick] No creators found for booth "$boothId"');
+      print('[BoothClick] Available booth mappings (first 10): ${_boothToCreators!.keys.take(10).join(", ")}...');
+
+      // Output full booth mappings as JSON for debugging
+      print('[BoothClick] === FULL BOOTH MAPPINGS JSON ===');
+      final mappingsJson = <String, dynamic>{};
+      _boothToCreators!.forEach((boothId, creators) {
+        mappingsJson[boothId] = creators.map((creator) => {
+          'name': creator.name,
+          'dataSource': creator.dataSource.name,
+          'booths': creator.booths,
+          'day': creator.day,
+          'fandom': creator.fandom,
+          'circleType': creator.circleType,
+        }).toList();
+      });
+
+      // Pretty print the JSON
+      const encoder = JsonEncoder.withIndent('  ');
+      print(encoder.convert(mappingsJson));
+      print('[BoothClick] === END FULL BOOTH MAPPINGS JSON ===');
+
+      return;
+    }
+
+    if (creators.isEmpty) {
+      print('[BoothClick] Empty creator list for booth "$boothId"');
+      return;
+    }
+
+    print('[BoothClick] Found ${creators.length} creator(s) for booth "$boothId":');
+
+    for (int i = 0; i < creators.length; i++) {
+      final creator = creators[i];
+      print('[BoothClick]   ${i + 1}. "${creator.name}" (${creator.dataSource.shortName})');
+      print('[BoothClick]      Booths: [${creator.booths.join(", ")}]');
+      print('[BoothClick]      Day: ${creator.day}');
+      if (creator.fandom != null) {
+        print('[BoothClick]      Fandom: ${creator.fandom}');
+      }
+      if (creator.circleType != null) {
+        print('[BoothClick]      Type: ${creator.circleType}');
+      }
+    }
+
     if (creators.length == 1) {
+      print('[BoothClick] Showing single creator detail sheet');
       // Only one creator - show detail immediately (don't center)
       _handleCreatorSelected(creators.first, fromSearch: false);
     } else {
+      print('[BoothClick] Showing multi-creator selector sheet');
       // Multiple creators - show selector
       showModalBottomSheet(
         context: context,
@@ -140,6 +218,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ),
       );
     }
+
+    print('[BoothClick] === END BOOTH CLICK DEBUG ===\n');
   }
 
   void _handleQueryParameters() {
@@ -225,7 +305,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             onCreatorSelected: _handleCreatorSelected,
             onClear: _selectedCreator != null ? _clearSelection : null,
           ),
-        
+
         // Map viewer
         Expanded(
           child: Stack(
@@ -236,6 +316,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 cols: _cols,
                 highlightedBooths: _highlightedBooths,
                 onBoothTap: _handleBoothTap,
+              ),
+              const Positioned(
+                top: 16,
+                right: 16,
+                child: DataSourceToggle(),
               ),
               const GitHubButton(isDesktop: true),
               const VersionNotification(isDesktop: true),
@@ -256,10 +341,17 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           highlightedBooths: _highlightedBooths,
           onBoothTap: _handleBoothTap,
         ),
-        
+
         const GitHubButton(isDesktop: false),
         const VersionNotification(isDesktop: false),
-        
+
+        // Data source toggle for mobile
+        const Positioned(
+          bottom: 16,
+          right: 16,
+          child: DataSourceToggle(),
+        ),
+
         if (_selectedCreator != null)
           SlideTransition(
             position: _detailSlideAnimation,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/creator.dart';
 
-class CreatorAvatar extends StatelessWidget {
+class CreatorAvatar extends StatefulWidget {
   final Creator creator;
   final double radius;
 
@@ -12,19 +13,50 @@ class CreatorAvatar extends StatelessWidget {
   });
 
   @override
+  State<CreatorAvatar> createState() => _CreatorAvatarState();
+}
+
+class _CreatorAvatarState extends State<CreatorAvatar> {
+  bool _imageLoadFailed = false;
+
+  @override
+  void didUpdateWidget(CreatorAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset failure state if creator changed
+    if (oldWidget.creator.profileImage != widget.creator.profileImage) {
+      _imageLoadFailed = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (creator.profileImage != null) {
+    if (widget.creator.profileImage != null && !_imageLoadFailed) {
+      // Check if it's a URL (starts with http/https) or a local asset
+      final isUrl = widget.creator.profileImage!.startsWith('http://') ||
+                   widget.creator.profileImage!.startsWith('https://');
+
       return CircleAvatar(
-        backgroundImage: AssetImage(creator.profileImage!),
+        backgroundImage: isUrl
+            ? NetworkImage(widget.creator.profileImage!) as ImageProvider<Object>
+            : AssetImage(widget.creator.profileImage!) as ImageProvider<Object>,
         backgroundColor: Colors.transparent,
-        radius: radius,
+        radius: widget.radius,
+        onBackgroundImageError: isUrl ? (exception, stackTrace) {
+          if (mounted) {
+            setState(() {
+              _imageLoadFailed = true;
+            });
+          }
+          debugPrint('Failed to load network image: ${widget.creator.profileImage}');
+        } : null,
       );
     }
 
-    final section = _getBoothSection(creator);
+    // Fallback: colored circle with section letter
+    final section = _getBoothSection(widget.creator);
     return CircleAvatar(
       backgroundColor: _getSectionColor(section),
-      radius: radius,
+      radius: widget.radius,
       child: Text(
         section,
         style: const TextStyle(

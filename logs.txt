@@ -1,0 +1,46 @@
+contentLogger
+ddc_module_loader.js:1015 DDC is about to load 1/2 scripts with pool size = 1000
+ddc_module_loader.js:1015 DDC is about to load 667/667 scripts with pool size = 1000
+content-script.js:22 Document already loaded, running initialization immediately
+content-script.js:4 Attempting to initialize AdUnit
+content-script.js:6 AdUnit initialized successfully
+ddc_module_loader.js:1583 Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+js_primitives.dart:28 FavoritesService: Storage available
+js_primitives.dart:28 [Main] Initializing data source manager...
+js_primitives.dart:28 Loaded 1396 local creators
+js_primitives.dart:28 [DataSourceManager] Loading catalog data...
+js_primitives.dart:28 [CatalogService] Getting all circles...
+js_primitives.dart:28 [CatalogService] Requesting catalog data...
+js_primitives.dart:28 [CatalogService] Cache age: 0 hours, 20 minutes. Valid: true
+js_primitives.dart:28 [CatalogService] Using cached data
+js_primitives.dart:28 [CatalogService] Retrieved cached data with 1 top-level keys
+js_primitives.dart:28 [CatalogService] Retrieved 1387 circles
+js_primitives.dart:28 [DataSourceManager] Processing 1387 circles from catalog
+js_primitives.dart:28 [DataSourceManager] Successfully loaded 1387 catalog creators
+js_primitives.dart:28 [DataSourceManager] Sample catalog booths: Faenite: [AA-0, AA-1] | Mazjojo: [AA-0, AA-2] | World Without Sleep: [AA-0, AA-3]
+js_primitives.dart:28 [Main] Data source manager initialized. Stats: {totalLocal: 1396, totalCatalog: 1387, totalCombined: 1398, missingInCatalog: 11}
+js_primitives.dart:28 
+=== DATA SOURCE DIAGNOSTICS ===
+js_primitives.dart:28 ✅ Catalog data loaded: 1387 creators
+js_primitives.dart:28 ✅ Local data loaded: 1396 creators
+js_primitives.dart:28 📊 Combined data: 1398 creators
+js_primitives.dart:28 ⚠️  11 creators exist in local data but not in catalog
+js_primitives.dart:28 
+--- BOOTH ANALYSIS ---
+js_primitives.dart:28 Local data booths: 2448 unique (M-10a, M-10b, J-37a, J-37b, F-38a...)
+js_primitives.dart:28 Catalog data booths: 288 unique (AA-0, AA-1, AA-2, AA-3, AA-4...)
+js_primitives.dart:28 ❌ Booths in local but not catalog: M-10a, M-10b, J-37a, J-37b, F-38a, F-38b, K-31a, AC-38, AC-13, B-01a...
+js_primitives.dart:28 ℹ️  Booths in catalog but not local: AA-0, AA-1, AA-2, AA-3, AA-4, AA-5, AA-6, AA-7, AA-8, AA-9...
+js_primitives.dart:28 
+=== END DIAGNOSTICS ===
+
+js_primitives.dart:28 [MapScreen] Current data source: Online Catalog
+js_primitives.dart:28 [MapScreen] Data source manager stats: {totalLocal: 1396, totalCatalog: 1387, totalCombined: 1398, missingInCatalog: 11}
+js_primitives.dart:28 [MapScreen] Using 1398 creators from Online Catalog
+js_primitives.dart:28 Data loaded in 173ms
+js_primitives.dart:28 Cells merged in 26ms
+js_primitives.dart:28 Total cells: 13348
+js_primitives.dart:28 Merged to: 5045 cells
+js_primitives.dart:28 Creators loaded: 1398
+js_primitives.dart:28 [MapScreen] Data loaded: 1398 creators, 300 booth mappings
+js_primitives.dart:28 [MapScreen] Sample mappings: AA-0: 11 creators, AA-1: 12 creators, AA-2: 3 creators
