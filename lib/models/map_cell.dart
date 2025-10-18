@@ -6,6 +6,7 @@ class MapCell {
   final bool isBooth;
   final bool isLocationMarker;
   final bool isWall;
+  final bool isHall;
   
   MapCell({
     required this.content,
@@ -14,7 +15,8 @@ class MapCell {
   }) : isEmpty = content.trim().isEmpty,
        isBooth = _isBooth(content),
        isLocationMarker = _isLocationMarker(content),
-       isWall = _isWall(content);
+       isWall = _isWall(content),
+       isHall = _isHall(content);
   
   static bool _isBooth(String content) {
     if (content.trim().isEmpty) return false;
@@ -25,13 +27,19 @@ class MapCell {
   static bool _isLocationMarker(String content) {
     if (content.trim().isEmpty) return false;
     // Location markers are single/double letters or just "a" or "b"
-    return !_isBooth(content) && !_isWall(content) && content.trim().isNotEmpty;
+    return !_isBooth(content) && !_isWall(content) && !_isHall(content) && content.trim().isNotEmpty;
   }
   
   static bool _isWall(String content) {
     if (content.trim().isEmpty) return false;
     // Wall cells are marked with "X"
     return content.trim() == 'X';
+  }
+  
+  static bool _isHall(String content) {
+    if (content.trim().isEmpty) return false;
+    // Hall cells are marked with "HALL X" where X is a number
+    return RegExp(r'^HALL\s+\d+$', caseSensitive: false).hasMatch(content.trim());
   }
   
   @override
@@ -48,6 +56,7 @@ class MergedCell {
   final bool isBooth;
   final bool isLocationMarker;
   final bool isWall;
+  final bool isHall;
   
   MergedCell({
     required this.content,
@@ -58,7 +67,8 @@ class MergedCell {
   }) : isEmpty = content.trim().isEmpty,
        isBooth = MapCell._isBooth(content),
        isLocationMarker = MapCell._isLocationMarker(content),
-       isWall = MapCell._isWall(content);
+       isWall = MapCell._isWall(content),
+       isHall = MapCell._isHall(content);
   
   bool containsPosition(int row, int col) {
     return row >= startRow && 

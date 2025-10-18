@@ -154,7 +154,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
         isMultiLetterArea = area.length > 1;
       }
     }
-    final targetScale = isMultiLetterArea ? 0.5 : 0.8;
+    final targetScale = isMultiLetterArea ? 0.6 : 0.8;
 
     // Calculate the translation to center the booths with target zoom
     final translationX = viewportWidth / 2 - avgX * targetScale;
@@ -256,12 +256,15 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     
     return InteractiveViewer(
       transformationController: _transformationController,
       minScale: 0.1,
-      maxScale: 10.0,
-      boundaryMargin: const EdgeInsets.symmetric(horizontal: 200, vertical: 400),
+      maxScale: 1.5,
+      boundaryMargin: EdgeInsets.symmetric(horizontal: screenWidth * 0.8, vertical: screenHeight * 0.8),
       constrained: false,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -332,8 +335,61 @@ class MapPainter extends CustomPainter {
     // Draw background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      // Dark mode navy, light mode greyish background to improve contrast
       Paint()..color = scaffoldBackgroundColor,
+    );
+
+    final hall7Rect = Rect.fromLTWH(
+      0.5,
+      3 / 103 * size.height,
+      size.width * 44 / 146 - 1,
+      size.height * 99 / 103,
+    );
+    canvas.drawRect(
+      hall7Rect,
+      Paint()..color = _getHallColor("HALL 7").withValues(alpha: isDark ? 0.15 : 0.5),
+    );
+    canvas.drawRect(
+      hall7Rect,
+      Paint()
+        ..color = _getHallBorderColor("HALL 7")
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    final hall8Rect = Rect.fromLTWH(
+      size.width * 44 / 146 + 0.5,
+      3 / 103 * size.height,
+      size.width * 50 / 146 - 1,
+      size.height * 99 / 103,
+    );
+    canvas.drawRect(
+      hall8Rect,
+      Paint()..color = _getHallColor("HALL 8").withValues(alpha: isDark ? 0.15 : 0.5),
+    );
+    canvas.drawRect(
+      hall8Rect,
+      Paint()
+        ..color = _getHallBorderColor("HALL 8")
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    final hall9Rect = Rect.fromLTWH(
+      size.width * 94 / 146 + 0.5,
+      3 / 103 * size.height,
+      size.width * 52 / 146 - 1,
+      size.height * 99 / 103,
+    );
+    canvas.drawRect(
+      hall9Rect,
+      Paint()..color = _getHallColor("HALL 9").withValues(alpha: isDark ? 0.15 : 0.5),
+    );
+    canvas.drawRect(
+      hall9Rect,
+      Paint()
+        ..color = _getHallBorderColor("HALL 9")
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
     );
 
     // Only draw text if zoomed in enough
@@ -364,7 +420,7 @@ class MapPainter extends CustomPainter {
       // Draw base fill using a more refined palette
       Color fillColor = _getCellColor(cell);
       fillPaint.color = fillColor;
-      if (useRoundedCorners) {
+      if (useRoundedCorners && !cell.isHall) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(rect, cornerRadius),
           fillPaint,
@@ -385,7 +441,7 @@ class MapPainter extends CustomPainter {
       }
       borderPaint.color = borderColor;
       borderPaint.strokeWidth = strokeWidth;
-      if (useRoundedCorners) {
+      if (useRoundedCorners && !cell.isHall) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(rect, cornerRadius),
           borderPaint,
@@ -462,10 +518,10 @@ class MapPainter extends CustomPainter {
     if (cell.isEmpty) {
       return Colors.transparent;
     } else if (cell.isWall) {
-      // Wall color - dark grey/black
       return isDark ? const Color(0xFF1A1A1A) : const Color(0xFF424242);
+    } else if (cell.isHall) {
+      return _getHallColor(cell.content);
     } else if (cell.isBooth) {
-      // Fill color per booth section
       final section = _getBoothSection(cell.content);
       return _boothFillColor(section);
     } else if (cell.isLocationMarker) {
@@ -481,8 +537,9 @@ class MapPainter extends CustomPainter {
     if (cell.isEmpty) {
       return Colors.transparent;
     } else if (cell.isWall) {
-      // Wall border - slightly lighter than fill
       return isDark ? const Color(0xFF2A2A2A) : const Color(0xFF616161);
+    } else if (cell.isHall) {
+      return _getHallBorderColor(cell.content);
     } else if (cell.isBooth) {
       final section = _getBoothSection(cell.content);
       return _boothBorderColor(section);
@@ -497,10 +554,10 @@ class MapPainter extends CustomPainter {
 
   TextStyle _getTextStyle(MergedCell cell, {bool isHighlighted = false}) {
     if (cell.isWall) {
-      // Walls don't display text
-      return TextStyle(
+      return const TextStyle(
         fontSize: 0,
         color: Colors.transparent,
+        fontFamily: 'Roboto',
       );
     } else if (cell.isBooth) {
       // When highlighted: dark text on bright/white overlay (dark mode), white text on dark blue (light mode)
@@ -514,17 +571,26 @@ class MapPainter extends CustomPainter {
         fontSize: 18,
         fontWeight: FontWeight.bold,
         color: textColor,
+        fontFamily: 'Roboto',
       );
     } else if (cell.isLocationMarker && cell.content != 'a' && cell.content != 'b') {
       return TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
         color: isDark ? const Color(0xFFFFB74D) : const Color(0xFFE65100),
+        fontFamily: 'Roboto',
+      );
+    } else if (cell.isHall) {
+      return TextStyle(
+        fontSize: 24,
+        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        fontFamily: 'Roboto',
       );
     }
     return TextStyle(
       fontSize: 14,
       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      fontFamily: 'Roboto',
     );
   }
 
@@ -596,6 +662,72 @@ class MapPainter extends CustomPainter {
     ];
     final idx = section.codeUnitAt(0) % palette.length;
     return palette[idx];
+  }
+
+  // Hall-specific background colors
+  Color _getHallColor(String content) {
+    // Extract hall number from content (e.g., "HALL 7" -> "7")
+    final match = RegExp(r'HALL\s+(\d+)', caseSensitive: false).firstMatch(content);
+    if (match == null) {
+      // Fallback color if parsing fails
+      return isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
+    }
+    
+    final hallNumber = match.group(1)!;
+    
+    // Define distinct color palettes for each hall
+    switch (hallNumber) {
+      case '7':
+        return isDark 
+            ? const Color(0xFF1A237E) // Deep blue for dark mode
+            : const Color(0xFFE3F2FD); // Light blue for light mode
+      case '8':
+        return isDark 
+            ? const Color(0xFF1B5E20) // Deep green for dark mode
+            : const Color(0xFFE8F5E9); // Light green for light mode
+      case '9':
+        return isDark 
+            ? const Color(0xFF4A148C) // Deep purple for dark mode
+            : const Color(0xFFF3E5F5); // Light purple for light mode
+      default:
+        // Fallback for any other hall numbers
+        return isDark 
+            ? const Color(0xFF424242) // Dark grey for dark mode
+            : const Color(0xFFF5F5F5); // Light grey for light mode
+    }
+  }
+
+  // Hall-specific border colors
+  Color _getHallBorderColor(String content) {
+    // Extract hall number from content (e.g., "HALL 7" -> "7")
+    final match = RegExp(r'HALL\s+(\d+)', caseSensitive: false).firstMatch(content);
+    if (match == null) {
+      // Fallback color if parsing fails
+      return isDark ? const Color(0xFF4A4A4A) : const Color(0xFF9E9E9E);
+    }
+    
+    final hallNumber = match.group(1)!;
+    
+    // Define distinct border colors for each hall (darker than fill for contrast)
+    switch (hallNumber) {
+      case '7':
+        return isDark 
+            ? const Color(0xFF283593) // Darker blue for dark mode
+            : const Color(0xFF1976D2); // Blue for light mode
+      case '8':
+        return isDark 
+            ? const Color(0xFF2E7D32) // Darker green for dark mode
+            : const Color(0xFF388E3C); // Green for light mode
+      case '9':
+        return isDark 
+            ? const Color(0xFF6A1B9A) // Darker purple for dark mode
+            : const Color(0xFF7B1FA2); // Purple for light mode
+      default:
+        // Fallback for any other hall numbers
+        return isDark 
+            ? const Color(0xFF616161) // Dark grey for dark mode
+            : const Color(0xFF9E9E9E); // Light grey for light mode
+    }
   }
 
   @override
