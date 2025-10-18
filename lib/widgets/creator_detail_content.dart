@@ -267,7 +267,10 @@ class CreatorDetailContent extends StatelessWidget {
               const Icon(Icons.check_circle, color: Colors.white),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('Link copied: ${creator.name}'),
+                child: Text(
+                  'Link copied: ${creator.name}',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
