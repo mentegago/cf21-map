@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'screens/map_screen.dart';
 import 'services/favorites_service.dart';
+import 'services/data_source_manager.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize favorites service to check storage availability
   await FavoritesService.instance.initialize();
-  
-  runApp(const CF21MapApp());
+
+  // Initialize data source manager
+  final dataSourceManager = DataSourceManager();
+  await dataSourceManager.initialize();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => dataSourceManager,
+      child: const CF21MapApp(),
+    ),
+  );
 }
 
 class CF21MapApp extends StatelessWidget {
