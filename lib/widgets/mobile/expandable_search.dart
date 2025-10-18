@@ -190,7 +190,7 @@ class _ExpandableSearchState extends State<ExpandableSearch> {
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _searchController,
                     builder: (context, value, _) {
-                      if (value.text.isNotEmpty && widget.onClear != null) {
+                      if (value.text.isNotEmpty || widget.onClear != null) {
                         return IconButton(
                           icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
                           onPressed: _handleClear,
