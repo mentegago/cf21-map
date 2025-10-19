@@ -5,6 +5,7 @@ import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/creator.dart';
 
@@ -170,9 +171,9 @@ class _CreatorListViewState extends State<CreatorListView> {
     // Featured section: header + featured creator
     itemCount += 2;
     
-    // Favorites section: header + favorites (if any and storage is available)
+    // Favorites section: header + favorites + share button (if any and storage is available)
     if (favorites.isNotEmpty) {
-      itemCount += 1 + favorites.length;
+      itemCount += 1 + favorites.length + 1; // +1 for share button
     }
     
     // All creators section: header + all creators
@@ -274,6 +275,55 @@ class _CreatorListViewState extends State<CreatorListView> {
         return CreatorTile(creator: favorites[favoriteIndex], onCreatorSelected: widget.onCreatorSelected);
       }
       currentIndex += favorites.length;
+      
+      // Share Favorites button
+      if (index == currentIndex) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              side: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            icon: Icon(Icons.share, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+            label: Text(
+              'Share Favorites',
+              style: TextStyle(
+                fontWeight: FontWeight.w400,
+                fontSize: 13,
+                letterSpacing: 0.1,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            onPressed: () {
+              final provider = context.read<FavoritesService>();
+              final favoriteIds = provider
+                .favorites
+                .map((creator) => creator.id)
+                .toList()
+                .join(',');
+      
+              final url = "https://cf21.nnt.gg/?custom_list=$favoriteIds";
+              Clipboard.setData(ClipboardData(text: url));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Shareable Favorites URL copied!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+        );
+      }
+      currentIndex++;
     }
     
     // All creators section

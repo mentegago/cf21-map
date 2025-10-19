@@ -114,7 +114,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     if (boothId == null) return;
     
     final creatorProvider = context.read<CreatorDataProvider>();
-    final boothToCreators = creatorProvider.boothToCreators;
+    final isCreatorCustomListMode = creatorProvider.isCreatorCustomListMode;
+    final boothToCreators = isCreatorCustomListMode ? creatorProvider.boothToCreatorCustomList : creatorProvider.boothToCreators;
     if (boothToCreators == null) return;
     
     final creators = boothToCreators[boothId];
@@ -298,6 +299,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   Widget _buildMobileLayout(BuildContext context) {
     final creators = context.select((CreatorDataProvider creatorProvider) => creatorProvider.creators);
     final selectedCreator = context.select((CreatorDataProvider creatorProvider) => creatorProvider.selectedCreator); 
+    final isCreatorCustomListMode = context.select((CreatorDataProvider creatorProvider) => creatorProvider.isCreatorCustomListMode);
 
     return Stack(
       children: [
@@ -309,6 +311,49 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ),
         
         const GitHubButton(isDesktop: false),
+
+        if (isCreatorCustomListMode)
+          Positioned(
+            bottom: 16,
+            left: 16,
+            child: Container(
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.pink[600],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    "You're viewing a custom creator list",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.pink[600],
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                    icon: const Icon(Icons.group, size: 19),
+                    label: const Text(
+                      'See All Creators',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    onPressed: () {
+                      context.read<CreatorDataProvider>().clearCreatorCustomList();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         const VersionNotification(isDesktop: false),
         
         if (selectedCreator != null)
