@@ -31,7 +31,6 @@ class ExpandableSearchState extends State<ExpandableSearch> {
       _searchController.text = query;
       _isExpanded = true;
     });
-    _focusNode.requestFocus();
     _performSearch(query);
   }
 
