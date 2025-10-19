@@ -45,7 +45,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       return _cachedFilteredCreators!;
     }
     
-    final lowerQuery = widget.searchQuery.toLowerCase();
+    final lowerQuery = widget.searchQuery.toLowerCase().trim();
     final filteredBoothQuery = _filterBoothFormat(lowerQuery);
     
     _cachedFilteredCreators = widget.creators.where((creator) {
