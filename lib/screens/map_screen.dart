@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:html' as html;
@@ -87,10 +88,12 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     }
   }
 
-  void _handleCreatorSelected(Creator creator, {bool fromSearch = true}) {
+  void _handleCreatorSelected(Creator creator) {
     final creatorProvider = context.read<CreatorDataProvider>();
     creatorProvider.setSelectedCreator(creator);
     _detailAnimationController.forward();
+
+    _updateQueryParametersIfNeeded(creator.id);
   }
 
   void _clearSelection() async {
@@ -99,6 +102,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     if (mounted) {
       creatorProvider.setSelectedCreator(null);
     }
+
+    _updateQueryParametersIfNeeded(null);
   }
 
   void _handleBoothTap(String? boothId) {
@@ -113,7 +118,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     
     if (creators.length == 1) {
       // Only one creator - show detail immediately (don't center)
-      _handleCreatorSelected(creators.first, fromSearch: false);
+      _handleCreatorSelected(creators.first);
     } else {
       // Multiple creators - show selector
       showModalBottomSheet(
@@ -121,9 +126,23 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         builder: (context) => CreatorSelectorSheet(
           boothId: boothId,
           creators: creators,
-          onCreatorSelected: (creator) => _handleCreatorSelected(creator, fromSearch: false),
+          onCreatorSelected: (creator) => _handleCreatorSelected(creator),
         ),
       );
+    }
+  }
+
+  void _updateQueryParametersIfNeeded(int? creatorId) {
+    if (kIsWeb) {
+      final uri = Uri.parse(html.window.location.href);
+      final creatorParam = uri.queryParameters['creator'];
+      final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
+      
+      if (creatorParam != null || creatorIdParam != null) {
+        html.window.history.pushState(null, '', creatorId != null ? '/?creator_id=${creatorId}' : '/');
+      } else {
+        print("Not needed");
+      }
     }
   }
 
@@ -140,7 +159,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           final creator = creatorProvider.getCreatorById(creatorIdParam);
           print('creator: ${creator?.name ?? 'null'}');
           if (creator != null) {
-            _handleCreatorSelected(creator, fromSearch: true);
+            _handleCreatorSelected(creator);
           }
         });
       } else if (creatorParam != null && creatorParam.isNotEmpty) {
@@ -164,14 +183,13 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               
               // Only select if we found a match
               if (creator.name.toLowerCase().contains(searchName)) {
-                _handleCreatorSelected(creator, fromSearch: true);
+                _handleCreatorSelected(creator);
               }
             }
           }
         });
       }
     } catch (e) {
-      // Ignore errors in query parameter parsing
       print('Error parsing query parameters: $e');
     }
   }
