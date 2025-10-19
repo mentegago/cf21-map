@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:provider/provider.dart';
 import '../models/map_cell.dart';
+import '../models/creator.dart';
+import '../services/creator_data_service.dart';
 
 class MapViewer extends StatefulWidget {
   final List<MergedCell> mergedCells;
   final int rows;
   final int cols;
-  final List<String>? highlightedBooths;
   final Function(String?)? onBoothTap;
 
   const MapViewer({
@@ -14,7 +16,6 @@ class MapViewer extends StatefulWidget {
     required this.mergedCells,
     required this.rows,
     required this.cols,
-    this.highlightedBooths,
     this.onBoothTap,
   });
 
@@ -24,7 +25,7 @@ class MapViewer extends StatefulWidget {
 
 class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMixin {
   final TransformationController _transformationController = TransformationController();
-  double _cellSize = 40.0;
+  final double _cellSize = 40.0;
   String? _hoveredBooth;
   late List<List<String?>> _boothLookupGrid; // O(1) spatial lookup
   late AnimationController _animationController;
@@ -38,6 +39,13 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+    
+    // Add listener to provider for selection changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<CreatorDataProvider>();
+      provider.addListener(_onProviderChanged);
+    });
     
     // Set initial zoom and position after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,6 +75,13 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
 
   @override
   void dispose() {
+    // Remove provider listener
+    try {
+      final provider = context.read<CreatorDataProvider>();
+      provider.removeListener(_onProviderChanged);
+    } catch (e) {
+      // Provider might be disposed already
+    }
     _animationController.dispose();
     _transformationController.dispose();
     super.dispose();
@@ -80,11 +95,17 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     if (oldWidget.mergedCells != widget.mergedCells) {
       _buildBoothLookupGrid();
     }
+  }
+
+  // Handle provider changes for selection animations
+  void _onProviderChanged() {
+    if (!mounted) return;
     
-    // Always center on booths when highlighted booths change
-    if (widget.highlightedBooths != oldWidget.highlightedBooths && 
-        widget.highlightedBooths != null && widget.highlightedBooths!.isNotEmpty) {
-      _centerOnBooths(widget.highlightedBooths!);
+    final provider = context.read<CreatorDataProvider>();
+    final currentSelectedCreator = provider.selectedCreator;
+    
+    if (currentSelectedCreator != null && currentSelectedCreator.booths.isNotEmpty) {
+      _centerOnBooths(currentSelectedCreator.booths);
     }
   }
 
@@ -260,6 +281,15 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     
+    // Get selected creator from provider
+    final selectedCreator = context.watch<CreatorDataProvider>().selectedCreator;
+    final selectedBooths = selectedCreator?.booths;
+    
+    // Find selected cells
+    final selectedCells = selectedBooths != null
+        ? widget.mergedCells.where((cell) => selectedBooths.contains(cell.content)).toList()
+        : <MergedCell>[];
+    
     return InteractiveViewer(
       transformationController: _transformationController,
       minScale: 0.1,
@@ -275,7 +305,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
           onExit: _handleExit,
           child: Stack(
             children: [
-              // Main map (doesn't repaint on hover)
+              // Main map (doesn't repaint on hover or selection)
               RepaintBoundary(
                 child: CustomPaint(
                   size: Size(
@@ -285,7 +315,6 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
                   painter: MapPainter(
                     mergedCells: widget.mergedCells,
                     cellSize: _cellSize,
-                    highlightedBooths: widget.highlightedBooths,
                     isDark: isDark,
                     scaffoldBackgroundColor: scaffoldBackgroundColor,
                   ),
@@ -306,6 +335,21 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
                     ),
                   ),
                 ),
+              // Selection overlay (only repaints selection effect)
+              if (selectedCells.isNotEmpty)
+                RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size(
+                      widget.cols * _cellSize,
+                      widget.rows * _cellSize,
+                    ),
+                    painter: SelectionOverlayPainter(
+                      selectedCells: selectedCells,
+                      cellSize: _cellSize,
+                      isDark: isDark,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -318,14 +362,12 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
 class MapPainter extends CustomPainter {
   final List<MergedCell> mergedCells;
   final double cellSize;
-  final List<String>? highlightedBooths;
   final bool isDark;
   final Color scaffoldBackgroundColor;
 
   MapPainter({
     required this.mergedCells,
     required this.cellSize,
-    this.highlightedBooths,
     required this.isDark,
     required this.scaffoldBackgroundColor,
   });
@@ -415,7 +457,6 @@ class MapPainter extends CustomPainter {
       final height = cell.rowSpan * cellSize;
 
       final rect = Rect.fromLTWH(left + 0.5, top + 0.5, width - 1, height - 1);
-      final isHighlighted = highlightedBooths != null && highlightedBooths!.contains(cell.content);
 
       // Draw base fill using a more refined palette
       Color fillColor = _getCellColor(cell);
@@ -434,11 +475,6 @@ class MapPainter extends CustomPainter {
       // Scale stroke subtly with zoom for visual consistency
       final zoomScale = (cellSize / 40.0).clamp(0.8, 2.0);
       double strokeWidth = (cell.isBooth ? 1.4 : 0.9) * zoomScale;
-      if (isHighlighted) {
-        // Bright yellow in dark mode, deep blue in light mode
-        borderColor = isDark ? const Color.fromARGB(255, 253, 173, 53) : const Color.fromARGB(255, 116, 42, 0);
-        strokeWidth = 3.0 * zoomScale;
-      }
       borderPaint.color = borderColor;
       borderPaint.strokeWidth = strokeWidth;
       if (useRoundedCorners && !cell.isHall) {
@@ -449,28 +485,10 @@ class MapPainter extends CustomPainter {
       } else {
         canvas.drawRect(rect, borderPaint);
       }
-
-      // Strong highlight overlay for selections
-      if (isHighlighted) {
-        final overlay = Paint()
-          ..style = PaintingStyle.fill
-          // White-ish overlay in dark mode, dark blue in light mode
-          ..color = isDark 
-              ? const Color.fromARGB(255, 255, 250, 180) // Semi-transparent white
-              : const Color.fromARGB(255, 255, 128, 9); // Semi-transparent deep blue
-        if (useRoundedCorners) {
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(rect, cornerRadius),
-            overlay,
-          );
-        } else {
-          canvas.drawRect(rect, overlay);
-        }
-      }
       
       // Draw text if zoomed in and cell is large enough
       if (shouldDrawText && cell.content.isNotEmpty && width > 20 && height > 15) {
-        _drawText(canvas, cell, rect, isHighlighted: isHighlighted);
+        _drawText(canvas, cell, rect);
       }
     }
   }
@@ -486,8 +504,8 @@ class MapPainter extends CustomPainter {
     return cell.content;
   }
 
-  void _drawText(Canvas canvas, MergedCell cell, Rect rect, {bool isHighlighted = false}) {
-    final textStyle = _getTextStyle(cell, isHighlighted: isHighlighted);
+  void _drawText(Canvas canvas, MergedCell cell, Rect rect) {
+    final textStyle = _getTextStyle(cell);
     final displayText = _getDisplayText(cell);
     final textSpan = TextSpan(
       text: displayText,
@@ -552,7 +570,7 @@ class MapPainter extends CustomPainter {
     return isDark ? const Color(0xFF4A4A4A) : const Color(0xFF9E9E9E);
   }
 
-  TextStyle _getTextStyle(MergedCell cell, {bool isHighlighted = false}) {
+  TextStyle _getTextStyle(MergedCell cell) {
     if (cell.isWall) {
       return const TextStyle(
         fontSize: 0,
@@ -560,13 +578,7 @@ class MapPainter extends CustomPainter {
         fontFamily: 'Roboto',
       );
     } else if (cell.isBooth) {
-      // When highlighted: dark text on bright/white overlay (dark mode), white text on dark blue (light mode)
-      Color textColor;
-      if (isHighlighted) {
-        textColor = isDark ? Colors.black : Colors.white;
-      } else {
-        textColor = isDark ? Colors.white : const Color(0xFF0D47A1);
-      }
+      Color textColor = isDark ? Colors.white : const Color(0xFF0D47A1);
       return TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
@@ -732,10 +744,9 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(MapPainter oldDelegate) {
-    // Only repaint if cellSize, data, highlighted booths, or theme changed
+    // Only repaint if cellSize, data, or theme changed
     final shouldRepaint = oldDelegate.cellSize != cellSize ||
         oldDelegate.mergedCells != mergedCells ||
-        oldDelegate.highlightedBooths != highlightedBooths ||
         oldDelegate.isDark != isDark;
     return shouldRepaint;
   }
@@ -794,6 +805,146 @@ class HoverOverlayPainter extends CustomPainter {
   @override
   bool shouldRepaint(HoverOverlayPainter oldDelegate) {
     return oldDelegate.hoveredCell != hoveredCell || oldDelegate.isDark != isDark;
+  }
+}
+
+// Separate painter for selection overlay - only repaints this layer
+class SelectionOverlayPainter extends CustomPainter {
+  final List<MergedCell> selectedCells;
+  final double cellSize;
+  final bool isDark;
+
+  SelectionOverlayPainter({
+    required this.selectedCells,
+    required this.cellSize,
+    required this.isDark,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (selectedCells.isEmpty) return;
+
+    final useRoundedCorners = cellSize >= 20;
+    final cornerRadius = cellSize >= 60
+        ? const Radius.circular(6)
+        : (cellSize >= 40 ? const Radius.circular(4) : const Radius.circular(2));
+    
+    // Scale stroke subtly with zoom for visual consistency
+    final zoomScale = (cellSize / 40.0).clamp(0.8, 2.0);
+    
+    // Only draw text if zoomed in enough
+    final shouldDrawText = cellSize >= 30;
+    
+    for (final cell in selectedCells) {
+      final left = cell.startCol * cellSize;
+      final top = cell.startRow * cellSize;
+      final width = cell.colSpan * cellSize;
+      final height = cell.rowSpan * cellSize;
+
+      final rect = Rect.fromLTWH(left + 0.5, top + 0.5, width - 1, height - 1);
+      
+      // Draw selection fill overlay
+      final fillPaint = Paint()
+        ..style = PaintingStyle.fill
+        // White-ish overlay in dark mode, dark blue in light mode
+        ..color = isDark 
+            ? const Color.fromARGB(255, 255, 250, 180) // Semi-transparent white
+            : const Color.fromARGB(255, 255, 128, 9); // Semi-transparent deep blue
+      
+      if (useRoundedCorners && !cell.isHall) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, cornerRadius),
+          fillPaint,
+        );
+      } else {
+        canvas.drawRect(rect, fillPaint);
+      }
+      
+      // Draw selection border
+      final borderPaint = Paint()
+        ..style = PaintingStyle.stroke
+        // Bright yellow in dark mode, deep blue in light mode
+        ..color = isDark ? const Color.fromARGB(255, 253, 173, 53) : const Color.fromARGB(255, 206, 102, 41)
+        ..strokeWidth = 3.0 * zoomScale;
+      
+      if (useRoundedCorners && !cell.isHall) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, cornerRadius),
+          borderPaint,
+        );
+      } else {
+        canvas.drawRect(rect, borderPaint);
+      }
+      
+      // Draw text if zoomed in and cell is large enough
+      if (shouldDrawText && cell.content.isNotEmpty && width > 20 && height > 15) {
+        _drawText(canvas, cell, rect);
+      }
+    }
+  }
+
+  String _getDisplayText(MergedCell cell) {
+    if (cell.isBooth) {
+      // Extract just the number from booth IDs (e.g., "O-33a" -> "33")
+      final match = RegExp(r'\d+').firstMatch(cell.content);
+      if (match != null) {
+        return match.group(0)!;
+      }
+    }
+    return cell.content;
+  }
+
+  void _drawText(Canvas canvas, MergedCell cell, Rect rect) {
+    final textStyle = _getTextStyle(cell);
+    final displayText = _getDisplayText(cell);
+    final textSpan = TextSpan(
+      text: displayText,
+      style: textStyle,
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: cell.rowSpan,
+      ellipsis: '...',
+    );
+
+    textPainter.layout(maxWidth: rect.width - 4);
+
+    // Center the text in the rect
+    final xCenter = rect.left + (rect.width - textPainter.width) / 2;
+    final yCenter = rect.top + (rect.height - textPainter.height) / 2;
+
+    textPainter.paint(canvas, Offset(xCenter, yCenter));
+  }
+
+  TextStyle _getTextStyle(MergedCell cell) {
+    if (cell.isBooth) {
+      // When highlighted: dark text on bright/white overlay (dark mode), white text on dark blue (light mode)
+      Color textColor;
+      if (isDark) {
+        textColor = Colors.black; // Dark text on bright overlay
+      } else {
+        textColor = Colors.white; // White text on dark overlay
+      }
+      return TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: textColor,
+        fontFamily: 'Roboto',
+      );
+    }
+    return TextStyle(
+      fontSize: 14,
+      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      fontFamily: 'Roboto',
+    );
+  }
+
+  @override
+  bool shouldRepaint(SelectionOverlayPainter oldDelegate) {
+    return oldDelegate.selectedCells != selectedCells || oldDelegate.isDark != isDark;
   }
 }
 

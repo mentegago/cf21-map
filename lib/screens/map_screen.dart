@@ -140,8 +140,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       
       if (creatorParam != null || creatorIdParam != null) {
         html.window.history.pushState(null, '', creatorId != null ? '/?creator_id=${creatorId}' : '/');
-      } else {
-        print("Not needed");
       }
     }
   }
@@ -151,6 +149,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       final uri = Uri.parse(html.window.location.href);
       final creatorParam = uri.queryParameters['creator'];
       final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
+      final creatorListParam = uri.queryParameters['creator_list'];
       
       if (creatorIdParam != null) {
         Future.delayed(const Duration(milliseconds: 300), () {
@@ -188,6 +187,20 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             }
           }
         });
+      } else if (creatorListParam != null) {
+        final creatorProvider = context.read<CreatorDataProvider>();
+        final idStrings = creatorListParam.split(',');
+        final idList = idStrings
+            .map((idStr) => int.tryParse(idStr.trim()))
+            .where((id) => id != null)
+            .cast<int>()
+            .toList();
+        
+        final creators = idList.map((id) => creatorProvider.getCreatorById(id)).nonNulls.toList();
+
+        if (creators.isNotEmpty) {
+          creatorProvider.setCurrentCreatorList(creators);
+        }
       }
     } catch (e) {
       print('Error parsing query parameters: $e');
@@ -265,7 +278,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 mergedCells: _mergedCells!,
                 rows: _rows,
                 cols: _cols,
-                highlightedBooths: selectedCreator?.booths,
                 onBoothTap: _handleBoothTap,
               ),
               const GitHubButton(isDesktop: true),
@@ -287,7 +299,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           mergedCells: _mergedCells!,
           rows: _rows,
           cols: _cols,
-          highlightedBooths: selectedCreator?.booths,
           onBoothTap: _handleBoothTap,
         ),
         

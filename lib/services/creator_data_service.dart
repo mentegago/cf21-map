@@ -27,19 +27,35 @@ class CreatorDataProvider extends ChangeNotifier {
   String? _error;
   CreatorDataStatus _status = CreatorDataStatus.idle;
   Timer? _updateTimer;
-  Creator? _selectedCreator; // Track currently selected creator for preservation
+  Creator? _selectedCreator;
+  List<Creator>? _currentCreatorList;
 
   // Getters
-  List<Creator>? get creators => _creators;
+  List<Creator>? get creators {
+    if (_currentCreatorList != null) return _currentCreatorList;
+    return _creators;
+  }
+  
   Map<String, List<Creator>>? get boothToCreators => _boothToCreators;
   bool get isLoading => _isLoading;
   String? get error => _error;
   CreatorDataStatus get status => _status;
   Creator? get selectedCreator => _selectedCreator;
+  bool get isCreatorListMode => _currentCreatorList != null;
 
   /// Set the currently selected creator (for preservation during updates)
   void setSelectedCreator(Creator? creator) {
     _selectedCreator = creator;
+    notifyListeners();
+  }
+
+  void setCurrentCreatorList(List<Creator> creatorList) {
+    _currentCreatorList = creatorList;
+    notifyListeners();
+  }
+
+  void clearCurrentCreatorList() {
+    _currentCreatorList = null;
     notifyListeners();
   }
 
