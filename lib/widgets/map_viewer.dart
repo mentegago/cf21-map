@@ -744,10 +744,11 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(MapPainter oldDelegate) {
-    // Only repaint if cellSize, data, or theme changed
+    // Only repaint if cellSize, data, theme, or background color changed
     final shouldRepaint = oldDelegate.cellSize != cellSize ||
         oldDelegate.mergedCells != mergedCells ||
-        oldDelegate.isDark != isDark;
+        oldDelegate.isDark != isDark ||
+        oldDelegate.scaffoldBackgroundColor != scaffoldBackgroundColor;
     return shouldRepaint;
   }
 }
