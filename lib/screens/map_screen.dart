@@ -98,7 +98,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
   void _clearSelection() async {
     final creatorProvider = context.read<CreatorDataProvider>();
-    await _detailAnimationController.reverse();
+    
+    if (!_isDesktop) {
+      await _detailAnimationController.reverse();
+    }
+
     if (mounted) {
       creatorProvider.setSelectedCreator(null);
     }
@@ -207,12 +211,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 768; // Breakpoint for desktop layout
-
     final isLoading = context.select((CreatorDataProvider creatorProvider) => creatorProvider.isLoading);
     final error = context.select((CreatorDataProvider creatorProvider) => creatorProvider.error);
     
@@ -246,7 +246,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                       ),
                     ),
                   )
-                : isDesktop
+                : _isDesktop
                     ? _buildDesktopLayout(context)
                     : _buildMobileLayout(context),
           // Clean snackbar listener
@@ -254,6 +254,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ],
       )
     );
+  }
+
+  bool get _isDesktop {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return screenWidth > 768; // Breakpoint for desktop layout
   }
 
   Widget _buildDesktopLayout(BuildContext context) {
