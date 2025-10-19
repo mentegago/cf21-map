@@ -1,3 +1,4 @@
+import 'package:cf21_map_flutter/services/creator_data_service.dart';
 import 'package:cf21_map_flutter/services/favorites_service.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
@@ -160,7 +161,9 @@ class _CreatorListViewState extends State<CreatorListView> {
 
   Widget _buildMainView(BuildContext context) {
     final theme = Theme.of(context);
-    final favorites = context.select((FavoritesService favoritesService) => favoritesService.favorites);
+    final isCreatorCustomListMode = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.isCreatorCustomListMode);
+
+    final List<Creator> favorites = isCreatorCustomListMode ? [] : context.select((FavoritesService favoritesService) => favoritesService.favorites);
     // Calculate total item count for ListView.builder
     int itemCount = 0;
     
@@ -179,32 +182,66 @@ class _CreatorListViewState extends State<CreatorListView> {
       controller: widget.scrollController,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        return _buildItemAtIndex(index, theme, favorites);
+        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode);
       },
     );
   }
 
-  Widget _buildItemAtIndex(int index, ThemeData theme, List<Creator> favorites) {
+  Widget _buildItemAtIndex(int index, ThemeData theme, List<Creator> favorites, bool isCreatorCustomListMode) {
     int currentIndex = 0;
     
     // Featured section
     if (index == 0) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          'Check us out~',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            letterSpacing: 0.5,
+      if (isCreatorCustomListMode) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            icon: const Icon(Icons.group, size: 19),
+            label: const Text(
+              'See All Creators',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                letterSpacing: 0.1,
+              ),
+            ),
+            onPressed: () {
+              final provider = context.read<CreatorDataProvider>();
+              provider.clearCreatorCustomList();
+            },
           ),
-        ),
-      );
+        );
+      }
+      else {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Check us out~',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              letterSpacing: 0.5,
+            ),
+          ),
+        );
+      }
     }
     currentIndex++;
     
     if (index == 1) {
+      if (isCreatorCustomListMode) {
+        return const SizedBox.shrink();
+      }
+      
       final featuredCreator = widget.creators.firstWhereOrNull(
         (c) => c.id == 5450
       );
@@ -244,7 +281,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         child: Text(
-          'All Creators',
+          isCreatorCustomListMode ? 'Creator List' : 'All Creators',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,

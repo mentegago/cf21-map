@@ -95,15 +95,9 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
         children: [
           // Search section
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              border: Border(
-                bottom: BorderSide(
-                  color: theme.dividerColor.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
             ),
             child: _buildSearchField(context, theme, isDark),
           ),

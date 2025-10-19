@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -22,26 +23,30 @@ class CreatorDataProvider extends ChangeNotifier {
   // State properties
   List<Creator>? _creators;
   Map<String, List<Creator>>? _boothToCreators;
+  Map<String, List<Creator>>? _boothToCreatorCustomList;
   Map<int, Creator>? _creatorById;
   bool _isLoading = true;
   String? _error;
   CreatorDataStatus _status = CreatorDataStatus.idle;
   Timer? _updateTimer;
   Creator? _selectedCreator;
-  List<Creator>? _currentCreatorList;
+  List<int>? _creatorCustomListIds;
+  List<Creator>? _creatorCustomList;
 
   // Getters
   List<Creator>? get creators {
-    if (_currentCreatorList != null) return _currentCreatorList;
+    if (isCreatorCustomListMode) return creatorCustomList;
     return _creators;
   }
   
   Map<String, List<Creator>>? get boothToCreators => _boothToCreators;
+  Map<String, List<Creator>>? get boothToCreatorCustomList => _boothToCreatorCustomList;
   bool get isLoading => _isLoading;
   String? get error => _error;
   CreatorDataStatus get status => _status;
   Creator? get selectedCreator => _selectedCreator;
-  bool get isCreatorListMode => _currentCreatorList != null;
+  List<Creator>? get creatorCustomList => _creatorCustomList;
+  bool get isCreatorCustomListMode => _creatorCustomListIds != null;
 
   /// Set the currently selected creator (for preservation during updates)
   void setSelectedCreator(Creator? creator) {
@@ -49,13 +54,25 @@ class CreatorDataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCurrentCreatorList(List<Creator> creatorList) {
-    _currentCreatorList = creatorList;
+  void setCreatorCustomList(List<int> creatorIds) {
+    if (_creatorById == null) return;
+
+    _creatorCustomListIds = creatorIds;
+    _creatorCustomList = creatorIds.map((id) => _creatorById![id]).nonNulls.toList();
+    _boothToCreatorCustomList = _buildBoothMapping(_creatorCustomList!);
+    
     notifyListeners();
   }
 
-  void clearCurrentCreatorList() {
-    _currentCreatorList = null;
+  void clearCreatorCustomList() {
+    _creatorCustomListIds = null;
+    _creatorCustomList = null;
+    _boothToCreatorCustomList = null;
+
+    if (kIsWeb) {
+      html.window.history.pushState(null, '', '/');
+    }
+
     notifyListeners();
   }
 
@@ -210,6 +227,12 @@ class CreatorDataProvider extends ChangeNotifier {
     _creators = creators;
     _boothToCreators = _buildBoothMapping(creators);
     _creatorById = _buildCreatorIdMapping(creators);
+
+    if (isCreatorCustomListMode) {
+      // Re-update the current creator list with the new creators
+      setCreatorCustomList(_creatorCustomListIds!);
+    }
+    
     notifyListeners();
   }
 

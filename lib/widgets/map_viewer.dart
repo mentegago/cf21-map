@@ -281,9 +281,14 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     
-    // Get selected creator from provider
-    final selectedCreator = context.watch<CreatorDataProvider>().selectedCreator;
+    // Get selected creator and booth mapping from provider
+    final creatorProvider = context.watch<CreatorDataProvider>();
+    final selectedCreator = creatorProvider.selectedCreator;
     final selectedBooths = selectedCreator?.booths;
+    final boothToCreators = creatorProvider.boothToCreators;
+    final boothToCreatorList = creatorProvider.boothToCreatorCustomList;
+    
+    final isCreatorCustomListMode = creatorProvider.isCreatorCustomListMode;
     
     // Find selected cells
     final selectedCells = selectedBooths != null
@@ -317,6 +322,8 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
                     cellSize: _cellSize,
                     isDark: isDark,
                     scaffoldBackgroundColor: scaffoldBackgroundColor,
+                    boothToCreators: isCreatorCustomListMode ? boothToCreatorList : boothToCreators,
+                    isCreatorCustomListMode: isCreatorCustomListMode,
                   ),
                 ),
               ),
@@ -364,12 +371,16 @@ class MapPainter extends CustomPainter {
   final double cellSize;
   final bool isDark;
   final Color scaffoldBackgroundColor;
+  final Map<String, List<Creator>>? boothToCreators;
+  final bool isCreatorCustomListMode;
 
   MapPainter({
     required this.mergedCells,
     required this.cellSize,
     required this.isDark,
     required this.scaffoldBackgroundColor,
+    required this.boothToCreators,
+    required this.isCreatorCustomListMode,
   });
 
   @override
@@ -540,6 +551,14 @@ class MapPainter extends CustomPainter {
     } else if (cell.isHall) {
       return _getHallColor(cell.content);
     } else if (cell.isBooth) {
+      if (boothToCreators?[cell.content]?.isEmpty ?? true) {
+        return isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE);
+      }
+
+      if (isCreatorCustomListMode) {
+        return const Color.fromARGB(255, 255, 0, 191); // Bright deep orange (material accent) 
+      }
+
       final section = _getBoothSection(cell.content);
       return _boothFillColor(section);
     } else if (cell.isLocationMarker) {
@@ -559,6 +578,15 @@ class MapPainter extends CustomPainter {
     } else if (cell.isHall) {
       return _getHallBorderColor(cell.content);
     } else if (cell.isBooth) {
+      // Check if booth has creators assigned
+      if (boothToCreators?[cell.content]?.isEmpty ?? true) {
+        return isDark ? const Color(0xFF4A4A4A) : const Color(0xFFBDBDBD);
+      }
+
+      if (isCreatorCustomListMode) {
+        return const Color.fromARGB(255, 255, 136, 205); // Bright deep orange (material accent) 
+      }
+
       final section = _getBoothSection(cell.content);
       return _boothBorderColor(section);
     } else if (cell.isLocationMarker) {
@@ -578,7 +606,20 @@ class MapPainter extends CustomPainter {
         fontFamily: 'Roboto',
       );
     } else if (cell.isBooth) {
+      // Check if booth has creators assigned - use location marker styling for empty booths
+      if (boothToCreators?[cell.content]?.isEmpty ?? true) {
+        return TextStyle(
+          fontSize: 18, // Keep booth font size
+          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          fontFamily: 'Roboto',
+        );
+      }
       Color textColor = isDark ? Colors.white : const Color(0xFF0D47A1);
+
+      if (isCreatorCustomListMode) {
+        textColor = Colors.white;
+      }
+
       return TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
@@ -744,11 +785,13 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(MapPainter oldDelegate) {
-    // Only repaint if cellSize, data, theme, or background color changed
+    // Only repaint if cellSize, data, theme, background color, or booth mapping changed
     final shouldRepaint = oldDelegate.cellSize != cellSize ||
         oldDelegate.mergedCells != mergedCells ||
         oldDelegate.isDark != isDark ||
-        oldDelegate.scaffoldBackgroundColor != scaffoldBackgroundColor;
+        oldDelegate.scaffoldBackgroundColor != scaffoldBackgroundColor ||
+        oldDelegate.boothToCreators != boothToCreators ||
+        oldDelegate.isCreatorCustomListMode != isCreatorCustomListMode;
     return shouldRepaint;
   }
 }

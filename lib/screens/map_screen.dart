@@ -153,7 +153,22 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       final uri = Uri.parse(html.window.location.href);
       final creatorParam = uri.queryParameters['creator'];
       final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
-      final creatorListParam = uri.queryParameters['creator_list'];
+      final creatorCustomListParam = uri.queryParameters['custom_list'];
+
+      if (creatorCustomListParam != null) {
+        final creatorProvider = context.read<CreatorDataProvider>();
+        final idStrings = creatorCustomListParam.split(',');
+        final idList = idStrings
+            .map((idStr) => int.tryParse(idStr.trim()))
+            .where((id) => id != null)
+            .cast<int>()
+            .toList();
+        
+
+        if (idList.isNotEmpty) {
+          creatorProvider.setCreatorCustomList(idList);
+        }
+      }
       
       if (creatorIdParam != null) {
         Future.delayed(const Duration(milliseconds: 300), () {
@@ -191,20 +206,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             }
           }
         });
-      } else if (creatorListParam != null) {
-        final creatorProvider = context.read<CreatorDataProvider>();
-        final idStrings = creatorListParam.split(',');
-        final idList = idStrings
-            .map((idStr) => int.tryParse(idStr.trim()))
-            .where((id) => id != null)
-            .cast<int>()
-            .toList();
-        
-        final creators = idList.map((id) => creatorProvider.getCreatorById(id)).nonNulls.toList();
-
-        if (creators.isNotEmpty) {
-          creatorProvider.setCurrentCreatorList(creators);
-        }
       }
     } catch (e) {
       print('Error parsing query parameters: $e');
