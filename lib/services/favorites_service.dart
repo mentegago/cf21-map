@@ -30,8 +30,7 @@ class FavoritesService extends ChangeNotifier {
         favoriteCreators.add(creator);
       }
     }
-    // Sort by name (case-insensitive)
-    favoriteCreators.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    
     return favoriteCreators;
   }
 
