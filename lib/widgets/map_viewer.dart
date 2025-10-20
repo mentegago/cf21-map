@@ -305,7 +305,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
         right: screenWidth * 0.8,
         top: screenHeight * 0.8,
         bottom: screenHeight * 0.8 
-          + (!_isDesktop && isCreatorCustomListMode ? 1000 : 0), // Add extra space for creator custom list information on mobile
+          + (!_isDesktop && isCreatorCustomListMode ? 2000 : 0), // Add extra space for creator custom list information on mobile
       ),
       constrained: false,
       child: GestureDetector(
