@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import '../models/creator.dart';
+import '../utils/url_encoding.dart';
 import 'creator_avatar.dart';
 
 class CreatorDetailContent extends StatelessWidget {
@@ -260,7 +261,7 @@ class CreatorDetailContent extends StatelessWidget {
 
   void _shareCreator(BuildContext context) async {
     try {
-      final shareUrl = 'https://cf21.nnt.gg/?creator_id=${creator.id}';
+      final shareUrl = UrlEncoding.toUrl({'creator_id': creator.id});
       
       await Clipboard.setData(ClipboardData(text: shareUrl));
 

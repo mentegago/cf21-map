@@ -31,6 +31,8 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
   late AnimationController _animationController;
   Animation<Matrix4>? _animation;
 
+  bool get _isDesktop => MediaQuery.of(context).size.width > 768;
+
   @override
   void initState() {
     super.initState();
@@ -157,8 +159,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     final screenHeight = MediaQuery.of(context).size.height;
     
     // On desktop, account for sidebar width (400px)
-    final isDesktop = screenWidth > 768;
-    final viewportWidth = isDesktop ? screenWidth - 400 : screenWidth;
+    final viewportWidth = _isDesktop ? screenWidth - 400 : screenWidth;
     final viewportHeight = screenHeight;
 
     // Get the current transformation
@@ -179,7 +180,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
 
     // Calculate the translation to center the booths with target zoom
     final translationX = viewportWidth / 2 - avgX * targetScale;
-    final translationY = viewportHeight / (isDesktop ? 2 : 3) - avgY * targetScale;
+    final translationY = viewportHeight / (_isDesktop ? 2 : 3) - avgY * targetScale;
 
     // Create target transformation
     final targetTransform = Matrix4.identity()
@@ -299,7 +300,13 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
       transformationController: _transformationController,
       minScale: 0.1,
       maxScale: 1.5,
-      boundaryMargin: EdgeInsets.symmetric(horizontal: screenWidth * 0.8, vertical: screenHeight * 0.8),
+      boundaryMargin: EdgeInsets.only(
+        left: screenWidth * 0.8,
+        right: screenWidth * 0.8,
+        top: screenHeight * 0.8,
+        bottom: screenHeight * 0.8 
+          + (!_isDesktop && isCreatorCustomListMode ? 1000 : 0), // Add extra space for creator custom list information on mobile
+      ),
       constrained: false,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

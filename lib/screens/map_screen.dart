@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:html' as html;
 import '../services/map_parser.dart';
 import '../services/creator_data_service.dart';
+import '../utils/int_encoding.dart';
 import '../widgets/map_viewer.dart';
 import '../widgets/mobile/creator_detail_sheet.dart';
 import '../widgets/mobile/expandable_search.dart';
@@ -154,7 +155,17 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       final uri = Uri.parse(html.window.location.href);
       final creatorParam = uri.queryParameters['creator'];
       final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
+      final compressedCreatorCustomListParam = uri.queryParameters['list'];
       final creatorCustomListParam = uri.queryParameters['custom_list'];
+
+      if (compressedCreatorCustomListParam != null) {
+        final creatorProvider = context.read<CreatorDataProvider>();
+        final idList = IntEncoding.stringCodeToInts(compressedCreatorCustomListParam);
+
+        if (idList.isNotEmpty) {
+          creatorProvider.setCreatorCustomList(idList);
+        }
+      }
 
       if (creatorCustomListParam != null) {
         final creatorProvider = context.read<CreatorDataProvider>();

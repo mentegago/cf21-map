@@ -1,5 +1,6 @@
 import 'package:cf21_map_flutter/services/creator_data_service.dart';
 import 'package:cf21_map_flutter/services/favorites_service.dart';
+import 'package:cf21_map_flutter/utils/int_encoding.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
 import 'dart:html' as html;
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/creator.dart';
+import '../utils/url_encoding.dart';
 
 class CreatorListView extends StatefulWidget {
   final List<Creator> creators;
@@ -370,7 +372,6 @@ class _AddAllToFavoritesButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: ElevatedButton.icon(
@@ -452,13 +453,15 @@ class _ShareFavorites extends StatelessWidget {
         ),
         onPressed: () {
           final provider = context.read<FavoritesService>();
-          final favoriteIds = provider
-            .favorites
-            .map((creator) => creator.id)
-            .toList()
-            .join(',');
+          final listCode = IntEncoding
+            .intsToStringCode(
+              provider
+                .favorites
+                .map((creator) => creator.id)
+                .toList()
+              );
           
-          final url = "https://cf21.nnt.gg/?custom_list=$favoriteIds";
+          final url = UrlEncoding.toUrl({'list': listCode});
           Clipboard.setData(ClipboardData(text: url));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/creator.dart';
+import '../utils/int_encoding.dart';
 import 'creator_data_service.dart';
 
 class FavoritesService extends ChangeNotifier {
@@ -51,6 +52,14 @@ class FavoritesService extends ChangeNotifier {
 
   bool isFavorited(int creatorId) {
     return _favoriteIds.contains(creatorId);
+  }
+
+  String get favoriteIdsCode {
+    return IntEncoding.intsToStringCode(_favoriteIds.toList());
+  }
+
+  List<int> favoriteIdsFromCode(String code) {
+    return IntEncoding.stringCodeToInts(code);
   }
 
   // Debounced storage update
