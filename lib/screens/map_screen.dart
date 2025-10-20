@@ -336,52 +336,21 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "You're viewing a custom creator list",
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Only creators in the list are shown on the map. Tap the search box above for the full list.",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          elevation: 0,
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                          minimumSize: const Size(0, 44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                    Text(
+                      "You're viewing a curated creator list",
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                        ),
-                        icon: const Icon(Icons.arrow_back, size: 20),
-                        label: const Text('Return to Full Creator List'),
-                        onPressed: () {
-                          if (kIsWeb) {
-                            html.window.location.assign('/');
-                          } 
-                          else {
-                            context.read<CreatorDataProvider>().clearCreatorCustomList();
-                          }
-                        },
-                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Only the creators selected by the list owner are shown on the map. Tap the search box above to see the creator list.",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),

@@ -302,7 +302,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         child: Text(
-          isCreatorCustomListMode ? 'Custom Creator List' : 'All Creators',
+          isCreatorCustomListMode ? 'Custom Creators List' : 'All Creators',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -313,6 +313,11 @@ class _CreatorListViewState extends State<CreatorListView> {
       );
     }
     currentIndex++;
+
+    if (index == currentIndex && isCreatorCustomListMode) {
+      return _AddAllToFavoritesButton(filteredCreators: _filteredCreators);
+    }
+    currentIndex++;
     
     // All creators items
     final creatorIndex = index - currentIndex;
@@ -321,10 +326,6 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     
     currentIndex += _filteredCreators.length;
-
-    if (isCreatorCustomListMode && index == currentIndex) {
-      return _AddAllToFavoritesButton(filteredCreators: _filteredCreators);
-    }
     
     return const SizedBox.shrink();
   }
@@ -358,7 +359,7 @@ class _SeeAllCreatorsButton extends StatelessWidget {
         spacing: 16,
         children: [
           const Text(
-            "You’re currently viewing a custom creator list. Only creators in the custom list are being shown.",
+            "You're viewing a curated creator list. Only the creators selected by the list owner are shown on the map.",
             textAlign: TextAlign.center,
           ),
           FilledButton.icon(
@@ -419,7 +420,7 @@ class _AddAllToFavoritesButton extends StatelessWidget {
         ),
         icon: const Icon(Icons.add, size: 16, color: Colors.white),
         label: const Text(
-          'Add All To Favorites',
+          'Add All to Favorites',
           style: TextStyle(
             fontWeight: FontWeight.w400,
             fontSize: 13,
