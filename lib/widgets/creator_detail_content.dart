@@ -367,31 +367,12 @@ class _CircleCutState extends State<_CircleCut> {
             child: CachedNetworkImage(
               imageUrl: widget.creator.circleCut ?? '',
               fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
               placeholder: (context, url) => Container(
                 color: _getSectionColor(_getBoothSection(widget.creator)),
-                child: Center(
-                  child: Text(
-                    _getBoothSection(widget.creator),
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
               ),
-              errorWidget: (context, url, error) {
-                return CreatorAvatar(
-                  creator: widget.creator,
-                  radius: 50,
-                );
-              },
-              // Persistent caching configuration
-              cacheManager: null, // Use default cache manager
-              maxWidthDiskCache: 400, // Cache at 2x resolution for crisp display
-              maxHeightDiskCache: 400,
+              errorWidget: (context, url, error) => Container(
+                color: _getSectionColor(_getBoothSection(widget.creator)),
+              )
             ),
           ),
         ),
