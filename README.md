@@ -37,7 +37,8 @@ flutter build web --release
 
 ## Kontribusi (Khusus buat developer)
 
-Jika ingin kontribusi ke kodingan appnya (bug fixing, nambahin feature, dsb.), mohon dimaklumi, karena ini proyek iseng weekend, kodingannya sangat berantakan, jadi ga rekomen utak-atik kodingannya. Tapi kalau anda psikopat, silakan submit PR.
+App ini merupakan app eksperimentasi saya, artinya saya bakal ngutak-ngatik terus app ini. Jika ada saran dan ingin contribute sesuatu, mungkin submit Issues dahulu. Kalau sudah oke, silakan submit PR. Mohon maaf atas keterbatasannya 🙇‍♂️
+
 
 ---
 
