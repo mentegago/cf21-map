@@ -327,41 +327,22 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
-                          ),
-                          padding: const EdgeInsets.all(10),
-                          child: Icon(
-                            Icons.group,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 28,
-                          ),
+                        Text(
+                          "You're viewing a custom creator list",
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "You're viewing a custom creator list",
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Only creators in the list are shown on the map. Tap the search box above for the full list.",
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Only creators in the list are shown on the map. Tap the search box above for the full list.",
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -379,8 +360,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                         ),
-                        icon: const Icon(Icons.people, size: 20),
-                        label: const Text('See All Creators'),
+                        icon: const Icon(Icons.arrow_back, size: 20),
+                        label: const Text('Return to Full Creator List'),
                         onPressed: () {
                           context.read<CreatorDataProvider>().clearCreatorCustomList();
                         },

@@ -335,9 +335,9 @@ class _SeeAllCreatorsButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            icon: const Icon(Icons.group, size: 19),
+            icon: const Icon(Icons.arrow_back, size: 19),
             label: const Text(
-              'See All Creators',
+              'Return to Full Creator List',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
