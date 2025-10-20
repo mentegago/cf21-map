@@ -179,6 +179,10 @@ class _CreatorListViewState extends State<CreatorListView> {
     // All creators section: header + all creators
     itemCount += 1 + _filteredCreators.length;
 
+    if (isCreatorCustomListMode) {
+      itemCount += 1;
+    }
+
     return ListView.builder(
       controller: widget.scrollController,
       itemCount: itemCount,
@@ -194,32 +198,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     // Featured section
     if (index == 0) {
       if (isCreatorCustomListMode) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              visualDensity: VisualDensity.compact,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            icon: const Icon(Icons.group, size: 19),
-            label: const Text(
-              'See All Creators',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                letterSpacing: 0.1,
-              ),
-            ),
-            onPressed: () {
-              final provider = context.read<CreatorDataProvider>();
-              provider.clearCreatorCustomList();
-            },
-          ),
-        );
+        return _SeeAllCreatorsButton();
       }
       else {
         return Padding(
@@ -278,50 +257,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       
       // Share Favorites button
       if (index == currentIndex) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              visualDensity: VisualDensity.compact,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              side: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            icon: Icon(Icons.share, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-            label: Text(
-              'Share Favorites',
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: 13,
-                letterSpacing: 0.1,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            onPressed: () {
-              final provider = context.read<FavoritesService>();
-              final favoriteIds = provider
-                .favorites
-                .map((creator) => creator.id)
-                .toList()
-                .join(',');
-      
-              final url = "https://cf21.nnt.gg/?custom_list=$favoriteIds";
-              Clipboard.setData(ClipboardData(text: url));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Shareable Favorites URL copied!'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-          ),
-        );
+        return _ShareFavorites();
       }
       currentIndex++;
     }
@@ -349,6 +285,183 @@ class _CreatorListViewState extends State<CreatorListView> {
       return CreatorTile(creator: _filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected);
     }
     
+    currentIndex += _filteredCreators.length;
+
+    if (isCreatorCustomListMode && index == currentIndex) {
+      return _AddAllToFavoritesButton(filteredCreators: _filteredCreators);
+    }
+    
     return const SizedBox.shrink();
+  }
+}
+
+class _SeeAllCreatorsButton extends StatelessWidget {
+  const _SeeAllCreatorsButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.16),
+          width: 1,
+        ),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        spacing: 16,
+        children: [
+          const Text(
+            "You’re currently viewing a custom creator list. Only creators in the custom list are being shown.",
+            textAlign: TextAlign.center,
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            icon: const Icon(Icons.group, size: 19),
+            label: const Text(
+              'See All Creators',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                letterSpacing: 0.1,
+              ),
+            ),
+            onPressed: () {
+              final provider = context.read<CreatorDataProvider>();
+              provider.clearCreatorCustomList();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddAllToFavoritesButton extends StatelessWidget {
+  const _AddAllToFavoritesButton({
+    required List<Creator> filteredCreators,
+  }) : _filteredCreators = filteredCreators;
+
+  final List<Creator> _filteredCreators;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: const Color.fromARGB(255, 221, 41, 101),
+          foregroundColor: Colors.white,
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        icon: const Icon(Icons.add, size: 16, color: Colors.white),
+        label: const Text(
+          'Add All To Favorites',
+          style: TextStyle(
+            fontWeight: FontWeight.w400,
+            fontSize: 13,
+            letterSpacing: 0.1,
+            color: Colors.white,
+          ),
+        ),
+        onPressed: () {
+          final favoritesService = context.read<FavoritesService>();
+          final beforeCount = favoritesService.favoriteCount;
+          for (final creator in _filteredCreators) {
+            favoritesService.addFavorite(creator.id);
+          }
+          final afterCount = favoritesService.favoriteCount;
+          final addedCount = afterCount - beforeCount;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                addedCount == 0
+                  ? 'All creators in the list are already in your favorites.'
+                  : 'Added $addedCount creator${addedCount == 1 ? '' : 's'} to favorites.'
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ShareFavorites extends StatelessWidget {
+  const _ShareFavorites();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          side: BorderSide(
+            color: theme.colorScheme.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        icon: Icon(Icons.share, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+        label: Text(
+          'Share Favorites',
+          style: TextStyle(
+            fontWeight: FontWeight.w400,
+            fontSize: 13,
+            letterSpacing: 0.1,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        onPressed: () {
+          final provider = context.read<FavoritesService>();
+          final favoriteIds = provider
+            .favorites
+            .map((creator) => creator.id)
+            .toList()
+            .join(',');
+          
+          final url = "https://cf21.nnt.gg/?custom_list=$favoriteIds";
+          Clipboard.setData(ClipboardData(text: url));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Shareable Favorites URL copied!'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

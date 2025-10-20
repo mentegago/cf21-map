@@ -316,40 +316,78 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           Positioned(
             bottom: 16,
             left: 16,
-            child: Container(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.pink[600],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    "You're viewing a custom creator list",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(height: 4),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.pink[600],
-                      minimumSize: const Size(0, 36),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+            right: 16,
+            child: Material(
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              elevation: 6,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.group,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "You're viewing a custom creator list",
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Only creators in the list are shown on the map. Tap the search box above for the full list.",
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          minimumSize: const Size(0, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                        ),
+                        icon: const Icon(Icons.people, size: 20),
+                        label: const Text('See All Creators'),
+                        onPressed: () {
+                          context.read<CreatorDataProvider>().clearCreatorCustomList();
+                        },
                       ),
-                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                     ),
-                    icon: const Icon(Icons.group, size: 19),
-                    label: const Text(
-                      'See All Creators',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    onPressed: () {
-                      context.read<CreatorDataProvider>().clearCreatorCustomList();
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
