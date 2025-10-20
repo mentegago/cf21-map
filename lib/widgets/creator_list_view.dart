@@ -2,8 +2,10 @@ import 'package:cf21_map_flutter/services/creator_data_service.dart';
 import 'package:cf21_map_flutter/services/favorites_service.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
+import 'dart:html' as html;
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -345,8 +347,12 @@ class _SeeAllCreatorsButton extends StatelessWidget {
               ),
             ),
             onPressed: () {
-              final provider = context.read<CreatorDataProvider>();
-              provider.clearCreatorCustomList();
+              if (kIsWeb) {
+                html.window.location.assign('/');
+              } 
+              else {
+                context.read<CreatorDataProvider>().clearCreatorCustomList();
+              }
             },
           ),
         ],

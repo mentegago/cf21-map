@@ -363,7 +363,12 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                         icon: const Icon(Icons.arrow_back, size: 20),
                         label: const Text('Return to Full Creator List'),
                         onPressed: () {
-                          context.read<CreatorDataProvider>().clearCreatorCustomList();
+                          if (kIsWeb) {
+                            html.window.location.assign('/');
+                          } 
+                          else {
+                            context.read<CreatorDataProvider>().clearCreatorCustomList();
+                          }
                         },
                       ),
                     ),
