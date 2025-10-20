@@ -17,6 +17,7 @@ dependencies:
   collection: ^1.19.1
   http: ^1.2.2
   provider: ^6.1.2
+  cached_network_image: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -29,7 +30,6 @@ flutter:
   assets:
     - data/map.json
     - data/creator-data-initial.json
-    - data/creator-data.json
     - assets/
   
   fonts:

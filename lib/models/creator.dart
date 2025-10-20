@@ -37,6 +37,9 @@ class Creator {
   final List<CreatorUrl> urls;
   final List<String> worksType;
   final List<String> fandoms;
+  final List<String> sampleworksImages;
+  final String? circleCut;
+  final String? circleCode;
 
   Creator({
     required this.id,
@@ -49,6 +52,9 @@ class Creator {
     this.urls = const [],
     this.worksType = const [],
     this.fandoms = const [],
+    this.sampleworksImages = const [],
+    this.circleCut,
+    this.circleCode,
   });
 
   factory Creator.fromJson(Map<String, dynamic> json) {
@@ -56,6 +62,7 @@ class Creator {
     final urlsJson = (json['urls'] as List?) ?? const [];
     final worksTypeJson = (json['works_type'] as List?) ?? const [];
     final fandomsJson = (json['fandoms'] as List?) ?? const [];
+    final sampleworksImagesJson = (json['sampleworks_images'] as List?) ?? const [];
     
     return Creator(
       id: json['id'] as int,
@@ -74,6 +81,9 @@ class Creator {
           .toList(),
       worksType: worksTypeJson.map((e) => e.toString()).toList(),
       fandoms: fandomsJson.map((e) => e.toString()).toList(),
+      sampleworksImages: sampleworksImagesJson.map((e) => e.toString()).toList(),
+      circleCut: json['circle_cut'] as String?,
+      circleCode: json['circle_code'] as String?,
     );
   }
 

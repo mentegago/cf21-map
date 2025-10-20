@@ -3,6 +3,7 @@ import 'package:cf21_map_flutter/services/favorites_service.dart';
 import 'package:cf21_map_flutter/utils/int_encoding.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
+import 'package:cf21_map_flutter/widgets/creator_tile_card.dart';
 import 'dart:html' as html;
 
 import 'package:collection/collection.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/creator.dart';
+import '../services/settings_provider.dart';
 import '../utils/url_encoding.dart';
 
 class CreatorListView extends StatefulWidget {
@@ -103,14 +105,42 @@ class _CreatorListViewState extends State<CreatorListView> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.searchQuery.isNotEmpty) {
-      return _buildSearchResults(context);
-    } else {
-      return _buildMainView(context);
-    }
+    final useCardView = context.select((SettingsProvider settingsProvider) => settingsProvider.useCardView);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: widget.searchQuery.isNotEmpty 
+            ? _buildSearchResults(context, useCardView) 
+            : _buildMainView(context, useCardView),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12),
+                width: 1,
+              ),
+            ),
+          ),
+          child: SegmentedButton<bool>(
+            selected: useCardView ? {true} : {false},
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: false, label: Text('Compact'), icon: Icon(Icons.view_list)),
+              ButtonSegment(value: true, label: Text('Card'), icon: Icon(Icons.view_agenda)),
+            ],
+            onSelectionChanged: (value) => context.read<SettingsProvider>().setUseCardView(value.first),
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildSearchResults(BuildContext context) {
+  Widget _buildSearchResults(BuildContext context, bool useCardView) {
     final theme = Theme.of(context);
     final itemCount = _filteredCreators.isEmpty 
       ? 2 // results count header + no results message
@@ -159,12 +189,12 @@ class _CreatorListViewState extends State<CreatorListView> {
         
         // Regular search result
         final creator = _filteredCreators[index - 1];
-        return CreatorTile(creator: creator, onCreatorSelected: widget.onCreatorSelected);
+        return useCardView ? CreatorTileCard(creator: creator, onCreatorSelected: widget.onCreatorSelected) : CreatorTile(creator: creator, onCreatorSelected: widget.onCreatorSelected);
       },
     );
   }
 
-  Widget _buildMainView(BuildContext context) {
+  Widget _buildMainView(BuildContext context, bool useCardView) {
     final theme = Theme.of(context);
     final isCreatorCustomListMode = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.isCreatorCustomListMode);
 
@@ -191,22 +221,22 @@ class _CreatorListViewState extends State<CreatorListView> {
       controller: widget.scrollController,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode);
+        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode, useCardView);
       },
     );
   }
 
-  Widget _buildItemAtIndex(int index, ThemeData theme, List<Creator> favorites, bool isCreatorCustomListMode) {
+  Widget _buildItemAtIndex(int index, ThemeData theme, List<Creator> favorites, bool isCreatorCustomListMode, bool useCardView) {
     int currentIndex = 0;
-    
+
     // Featured section
-    if (index == 0) {
+    if (index == currentIndex) {
       if (isCreatorCustomListMode) {
-        return _SeeAllCreatorsButton();
+        return const _SeeAllCreatorsButton();
       }
       else {
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 8),
           child: Text(
             'Check us out~',
             style: TextStyle(
@@ -221,7 +251,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     currentIndex++;
     
-    if (index == 1) {
+    if (index == currentIndex) {
       if (isCreatorCustomListMode) {
         return const SizedBox.shrink();
       }
@@ -230,16 +260,16 @@ class _CreatorListViewState extends State<CreatorListView> {
         (c) => c.id == 5450
       );
       return featuredCreator != null 
-        ? CreatorTileFeatured(creator: featuredCreator, onCreatorSelected: widget.onCreatorSelected) 
+        ? CreatorTileFeatured(creator: featuredCreator, onCreatorSelected: widget.onCreatorSelected)
         : const SizedBox.shrink();
     }
     currentIndex++;
     
     // Favorites section
     if (favorites.isNotEmpty) {
-      if (index == 2) {
+      if (index == currentIndex) {
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
           child: Text(
             'Favorites',
             style: TextStyle(
@@ -253,15 +283,16 @@ class _CreatorListViewState extends State<CreatorListView> {
       }
       currentIndex++;
       
-      final favoriteIndex = index - 3;
+      // Check if we're in the favorites range
+      final favoriteIndex = index - currentIndex;
       if (favoriteIndex >= 0 && favoriteIndex < favorites.length) {
-        return CreatorTile(creator: favorites[favoriteIndex], onCreatorSelected: widget.onCreatorSelected);
+        return useCardView ? CreatorTileCard(creator: favorites[favoriteIndex], onCreatorSelected: widget.onCreatorSelected) : CreatorTile(creator: favorites[favoriteIndex], onCreatorSelected: widget.onCreatorSelected);
       }
       currentIndex += favorites.length;
       
       // Share Favorites button
       if (index == currentIndex) {
-        return _ShareFavorites();
+        return const _ShareFavorites();
       }
       currentIndex++;
     }
@@ -286,7 +317,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     // All creators items
     final creatorIndex = index - currentIndex;
     if (creatorIndex >= 0 && creatorIndex < _filteredCreators.length) {
-      return CreatorTile(creator: _filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected);
+      return useCardView ? CreatorTileCard(creator: _filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected) : CreatorTile(creator: _filteredCreators[creatorIndex], onCreatorSelected: widget.onCreatorSelected);
     }
     
     currentIndex += _filteredCreators.length;
@@ -425,30 +456,21 @@ class _ShareFavorites extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
+      child: FilledButton.tonalIcon(
+        style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           visualDensity: VisualDensity.compact,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          side: BorderSide(
-            color: theme.colorScheme.outline.withValues(alpha: 0.3),
-            width: 1,
-          ),
         ),
-        icon: Icon(Icons.share, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-        label: Text(
+        icon: const Icon(Icons.share, size: 16),
+        label: const Text(
           'Share Favorites',
           style: TextStyle(
             fontWeight: FontWeight.w400,
             fontSize: 13,
             letterSpacing: 0.1,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         onPressed: () {

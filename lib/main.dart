@@ -1,3 +1,4 @@
+import 'package:cf21_map_flutter/services/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/map_screen.dart';
@@ -9,16 +10,17 @@ void main() async {
   
   final creatorDataProvider = CreatorDataProvider()..initialize();
   final favoritesService = FavoritesService(creatorDataProvider)..initialize();
+  final settingsProvider = SettingsProvider()..initialize();
   
-  runApp(CF21MapApp(creatorDataProvider: creatorDataProvider, favoritesService: favoritesService));
+  runApp(CF21MapApp(creatorDataProvider: creatorDataProvider, favoritesService: favoritesService, settingsProvider: settingsProvider));
 }
 
 class CF21MapApp extends StatelessWidget {
 
   final CreatorDataProvider creatorDataProvider;
   final FavoritesService favoritesService;
-
-  const CF21MapApp({super.key, required this.creatorDataProvider, required this.favoritesService});
+  final SettingsProvider settingsProvider;
+  const CF21MapApp({super.key, required this.creatorDataProvider, required this.favoritesService, required this.settingsProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,9 @@ class CF21MapApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => favoritesService,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => settingsProvider,
         ),
       ],
       child: MaterialApp(

@@ -145,7 +145,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
       
       if (creatorParam != null || creatorIdParam != null) {
-        html.window.history.pushState(null, '', creatorId != null ? '/?creator_id=${creatorId}' : '/');
+        html.window.history.pushState(null, '', creatorId != null ? '/?creator_id=$creatorId' : '/');
       }
     }
   }
