@@ -66,9 +66,9 @@ class CreatorDataProvider extends ChangeNotifier {
   }
 
   void selectRandomCreator() {
-    if (_creators == null || _creators!.isEmpty) return;
+    if (creators == null || creators!.isEmpty) return;
 
-    final creator = _creators![Random().nextInt(_creators!.length)];
+    final creator = creators![Random().nextInt(creators!.length)];
     setSelectedCreator(creator);
   }
 
