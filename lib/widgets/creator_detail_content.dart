@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../models/creator.dart';
 import '../utils/url_encoding.dart';
 
-class CreatorDetailContent extends StatelessWidget {
+class CreatorDetailContent extends StatefulWidget {
   final Creator creator;
   final bool showFavoriteButton;
   final bool showShareButton;
@@ -25,6 +25,13 @@ class CreatorDetailContent extends StatelessWidget {
   });
 
   @override
+  State<CreatorDetailContent> createState() => _CreatorDetailContentState();
+}
+
+class _CreatorDetailContentState extends State<CreatorDetailContent> {
+  bool isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -38,14 +45,14 @@ class CreatorDetailContent extends StatelessWidget {
           
           Row(
             children: [
-              Icon(Icons.calendar_today, color: _getDayColor(creator.day), size: 20),
+              Icon(Icons.calendar_today, color: _getDayColor(widget.creator.day), size: 20),
               const SizedBox(width: 8),
               Text(
-                creator.dayDisplay,
+                widget.creator.dayDisplay,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: _getDayColor(creator.day),
+                  color: _getDayColor(widget.creator.day),
                 ),
               ),
             ],
@@ -54,7 +61,7 @@ class CreatorDetailContent extends StatelessWidget {
           const SizedBox(height: 16),
     
           // Informations
-          ...creator.informations.map((info) {
+          ...widget.creator.informations.map((info) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -76,7 +83,7 @@ class CreatorDetailContent extends StatelessWidget {
           }),
     
           // URLs
-          if (creator.urls.isNotEmpty) ...[
+          if (widget.creator.urls.isNotEmpty) ...[
             const Text(
               'Links',
               style: TextStyle(
@@ -88,7 +95,7 @@ class CreatorDetailContent extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: creator.urls.map((link) {
+              children: widget.creator.urls.map((link) {
                 return Tooltip(
                   message: link.url,
                   child: ActionChip(
@@ -109,9 +116,9 @@ class CreatorDetailContent extends StatelessWidget {
           ],
 
           // Fandom
-          if (creator.fandoms.isNotEmpty) ...[
+          if (widget.creator.fandoms.isNotEmpty) ...[
             Text(
-              'Fandom${creator.fandoms.length > 1 ? 's' : ''}',
+              'Fandom${widget.creator.fandoms.length > 1 ? 's' : ''}',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -121,12 +128,12 @@ class CreatorDetailContent extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: creator.fandoms.map((fandom) {
+              children: widget.creator.fandoms.map((fandom) {
                 return ActionChip(
                   avatar: const Icon(Icons.favorite, size: 18),
                   label: Text(fandom),
                   onPressed: () {
-                    onRequestSearch(fandom);
+                    widget.onRequestSearch(fandom);
                   },
                   backgroundColor: theme.colorScheme.primaryContainer,
                   side: BorderSide(color: theme.colorScheme.primary),
@@ -137,9 +144,9 @@ class CreatorDetailContent extends StatelessWidget {
           ],
 
           // Works Type
-          if (creator.worksType.isNotEmpty) ...[
+          if (widget.creator.worksType.isNotEmpty) ...[
             Text(
-              'Works Type${creator.worksType.length > 1 ? 's' : ''}',
+              'Works Type${widget.creator.worksType.length > 1 ? 's' : ''}',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -149,7 +156,7 @@ class CreatorDetailContent extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: creator.worksType.map((worksType) {
+              children: widget.creator.worksType.map((worksType) {
                 return Chip(
                   avatar: Icon(Icons.sell, size: 18, color: theme.colorScheme.primary),
                   label: Text(worksType),
@@ -162,7 +169,7 @@ class CreatorDetailContent extends StatelessWidget {
     
           // Booths
           Text(
-            'Booth Location${creator.booths.length > 1 ? 's' : ''}',
+            'Booth Location${widget.creator.booths.length > 1 ? 's' : ''}',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -172,7 +179,7 @@ class CreatorDetailContent extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: creator.booths.map((booth) {
+            children: widget.creator.booths.map((booth) {
               return Chip(
                 avatar: Icon(Icons.location_on, size: 18, color: theme.colorScheme.primary),
                 label: Text(booth),
@@ -189,6 +196,8 @@ class CreatorDetailContent extends StatelessWidget {
 
   ClipRRect _headerSection(BuildContext context) {
     final theme = Theme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width > 768;
+
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(12)),
       child: Column(
@@ -196,7 +205,24 @@ class CreatorDetailContent extends StatelessWidget {
         children: [
           Stack(
             children: [
-              _CircleCut(creator: creator),
+              _CircleCut(creator: widget.creator, isExpanded: isExpanded),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
+                    borderRadius: const BorderRadius.all(Radius.circular(32)),
+                    border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+                  ),
+                  child: IconButton(
+                    icon: isExpanded ? const Icon(Icons.fullscreen_exit) : const Icon(Icons.fullscreen),
+                    tooltip: isExpanded ? 'Collapse Circle Cut' : 'Expand Circle Cut',
+                    onPressed: () => setState(() => isExpanded = !isExpanded),
+                  ),
+                ),
+              ),
               Positioned(
                 top: 0,
                 right: 0,
@@ -211,12 +237,12 @@ class CreatorDetailContent extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          if (showFavoriteButton) 
+                          if (widget.showFavoriteButton) 
                             FavoriteButton(
-                              key: Key(creator.name), 
-                              creator: creator
+                              key: Key(widget.creator.name), 
+                              creator: widget.creator
                             ),
-                          if (showShareButton)
+                          if (widget.showShareButton)
                             IconButton(
                               icon: const Icon(Icons.share),
                               tooltip: 'Share',
@@ -225,7 +251,7 @@ class CreatorDetailContent extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (showCloseButton && onClose != null)
+                    if (widget.showCloseButton && widget.onClose != null)
                       Container(
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
@@ -236,7 +262,7 @@ class CreatorDetailContent extends StatelessWidget {
                         child: IconButton(
                           icon: const Icon(Icons.close),
                           tooltip: 'Close',
-                          onPressed: onClose,
+                          onPressed: widget.onClose,
                         ),
                       ),
                   ],
@@ -254,7 +280,7 @@ class CreatorDetailContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(
-                  creator.name,
+                  widget.creator.name,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -272,7 +298,7 @@ class CreatorDetailContent extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    final url = 'https://catalog.comifuro.net/circle/${creator.id}';
+                    final url = 'https://catalog.comifuro.net/circle/${widget.creator.id}';
                     launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                   },
                 ),
@@ -299,7 +325,7 @@ class CreatorDetailContent extends StatelessWidget {
 
   void _shareCreator(BuildContext context) async {
     try {
-      final shareUrl = UrlEncoding.toUrl({'creator_id': creator.id});
+      final shareUrl = UrlEncoding.toUrl({'creator_id': widget.creator.id});
       
       await Clipboard.setData(ClipboardData(text: shareUrl));
 
@@ -313,7 +339,7 @@ class CreatorDetailContent extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Link copied: ${creator.name}',
+                  'Link copied: ${widget.creator.name}',
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
@@ -337,8 +363,9 @@ class CreatorDetailContent extends StatelessWidget {
 
 class _CircleCut extends StatefulWidget {
   final Creator creator;
+  final bool isExpanded;
 
-  const _CircleCut({required this.creator});
+  const _CircleCut({required this.creator, required this.isExpanded});
 
   @override
   State<_CircleCut> createState() => _CircleCutState();
@@ -348,36 +375,53 @@ class _CircleCutState extends State<_CircleCut> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width > 768;
-    return AspectRatio(
-      aspectRatio: isDesktop ? 0.8 : 2.0,
-      child: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
+    final targetAspectRatio = widget.isExpanded ? 0.7 : 2.0;
+    final targetScale = widget.isExpanded ? 1.0 : 1.1;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: targetAspectRatio, end: targetAspectRatio),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      builder: (context, aspect, child) {
+        return AspectRatio(
+          aspectRatio: aspect,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: targetScale, end: targetScale),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            builder: (context, scale, _) {
+              return Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: ClipRect(
+                  child: Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.bottomCenter,
+                    child: CachedNetworkImage(
+                      imageUrl: widget.creator.circleCut ?? '',
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: _getSectionColor(_getBoothSection(widget.creator)),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: _getSectionColor(_getBoothSection(widget.creator)),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        ),
-        child: ClipRect(
-          child: Transform.scale(
-            scale: isDesktop ? 1.3 : 1.1,
-            alignment: Alignment.bottomCenter,
-            child: CachedNetworkImage(
-              imageUrl: widget.creator.circleCut ?? '',
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: _getSectionColor(_getBoothSection(widget.creator)),
-              ),
-              errorWidget: (context, url, error) => Container(
-                color: _getSectionColor(_getBoothSection(widget.creator)),
-              )
-            ),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
+
 
   String _getBoothSection(Creator creator) {
     if (creator.booths.isEmpty) return '?';
