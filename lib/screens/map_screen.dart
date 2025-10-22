@@ -119,77 +119,79 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _handleQueryParameters() {
-    try {
-      final uri = Uri.parse(html.window.location.href);
-      final creatorParam = uri.queryParameters['creator'];
-      final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
-      final compressedCreatorCustomListParam = uri.queryParameters['list'];
-      final creatorCustomListParam = uri.queryParameters['custom_list'];
+    context.read<CreatorDataProvider>().onCreatorDataServiceInitialized(() {
+      try {
+        final uri = Uri.parse(html.window.location.href);
+        final creatorParam = uri.queryParameters['creator'];
+        final creatorIdParam = int.tryParse(uri.queryParameters['creator_id'] ?? '');
+        final compressedCreatorCustomListParam = uri.queryParameters['list'];
+        final creatorCustomListParam = uri.queryParameters['custom_list'];
 
-      if (compressedCreatorCustomListParam != null) {
-        final creatorProvider = context.read<CreatorDataProvider>();
-        final idList = IntEncoding.stringCodeToInts(compressedCreatorCustomListParam);
-
-        if (idList.isNotEmpty) {
-          creatorProvider.setCreatorCustomList(idList);
-        }
-      }
-
-      if (creatorCustomListParam != null) {
-        final creatorProvider = context.read<CreatorDataProvider>();
-        final idStrings = creatorCustomListParam.split(',');
-        final idList = idStrings
-            .map((idStr) => int.tryParse(idStr.trim()))
-            .where((id) => id != null)
-            .cast<int>()
-            .toList();
-        
-
-        if (idList.isNotEmpty) {
-          creatorProvider.setCreatorCustomList(idList);
-        }
-      }
-      
-      if (creatorIdParam != null) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (!mounted) return;
+        if (compressedCreatorCustomListParam != null) {
           final creatorProvider = context.read<CreatorDataProvider>();
-          final creator = creatorProvider.getCreatorById(creatorIdParam);
-          print('creator: ${creator?.name ?? 'null'}');
-          if (creator != null) {
-            _handleCreatorSelected(creator);
+          final idList = IntEncoding.stringCodeToInts(compressedCreatorCustomListParam);
+
+          if (idList.isNotEmpty) {
+            creatorProvider.setCreatorCustomList(idList);
           }
-        });
-      } else if (creatorParam != null && creatorParam.isNotEmpty) {
-        // Decode and normalize name (replace + with space, trim)
-        final searchName = Uri.decodeComponent(creatorParam.replaceAll('+', ' ')).trim().toLowerCase();
+        }
+
+        if (creatorCustomListParam != null) {
+          final creatorProvider = context.read<CreatorDataProvider>();
+          final idStrings = creatorCustomListParam.split(',');
+          final idList = idStrings
+              .map((idStr) => int.tryParse(idStr.trim()))
+              .where((id) => id != null)
+              .cast<int>()
+              .toList();
+          
+
+          if (idList.isNotEmpty) {
+            creatorProvider.setCreatorCustomList(idList);
+          }
+        }
         
-        // Small delay to ensure UI is ready
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
+        if (creatorIdParam != null) {
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (!mounted) return;
             final creatorProvider = context.read<CreatorDataProvider>();
-            final creators = creatorProvider.creators;
-            if (creators != null && creators.isNotEmpty) {
-              // Find creator by name (case-insensitive, partial match)
-              final creator = creators.firstWhere(
-                (c) => c.name.toLowerCase().contains(searchName),
-                orElse: () => creators.firstWhere(
-                  (c) => c.name.toLowerCase() == searchName,
-                  orElse: () => creators.first, // fallback, won't be used if null check below
-                ),
-              );
-              
-              // Only select if we found a match
-              if (creator.name.toLowerCase().contains(searchName)) {
-                _handleCreatorSelected(creator);
+            final creator = creatorProvider.getCreatorById(creatorIdParam);
+            print('creator: ${creator?.name ?? 'null'}');
+            if (creator != null) {
+              _handleCreatorSelected(creator);
+            }
+          });
+        } else if (creatorParam != null && creatorParam.isNotEmpty) {
+          // Decode and normalize name (replace + with space, trim)
+          final searchName = Uri.decodeComponent(creatorParam.replaceAll('+', ' ')).trim().toLowerCase();
+          
+          // Small delay to ensure UI is ready
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              final creatorProvider = context.read<CreatorDataProvider>();
+              final creators = creatorProvider.creators;
+              if (creators != null && creators.isNotEmpty) {
+                // Find creator by name (case-insensitive, partial match)
+                final creator = creators.firstWhere(
+                  (c) => c.name.toLowerCase().contains(searchName),
+                  orElse: () => creators.firstWhere(
+                    (c) => c.name.toLowerCase() == searchName,
+                    orElse: () => creators.first, // fallback, won't be used if null check below
+                  ),
+                );
+                
+                // Only select if we found a match
+                if (creator.name.toLowerCase().contains(searchName)) {
+                  _handleCreatorSelected(creator);
+                }
               }
             }
-          }
-        });
+          });
+        }
+      } catch (e) {
+        print('Error parsing query parameters: $e');
       }
-    } catch (e) {
-      print('Error parsing query parameters: $e');
-    }
+    });
   }
 
   @override

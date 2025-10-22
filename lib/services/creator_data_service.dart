@@ -34,6 +34,8 @@ class CreatorDataProvider extends ChangeNotifier {
   List<int>? _creatorCustomListIds;
   List<Creator>? _creatorCustomList;
 
+  Function? _onInitialized;
+
   // Getters
   List<Creator>? get creators {
     if (isCreatorCustomListMode) return creatorCustomList;
@@ -49,6 +51,14 @@ class CreatorDataProvider extends ChangeNotifier {
   List<Creator>? get creatorCustomList => _creatorCustomList;
   bool get isCreatorCustomListMode => _creatorCustomListIds != null;
 
+  void onCreatorDataServiceInitialized(Function callback) {
+    _onInitialized = callback;
+
+    if (!_isLoading) {
+      _onInitialized?.call();
+    }
+  }
+
   /// Set the currently selected creator (for preservation during updates)
   void setSelectedCreator(Creator? creator) {
     _selectedCreator = creator;
@@ -63,9 +73,10 @@ class CreatorDataProvider extends ChangeNotifier {
   }
 
   void setCreatorCustomList(List<int> creatorIds) {
+    _creatorCustomListIds = creatorIds;
+
     if (_creatorById == null) return;
 
-    _creatorCustomListIds = creatorIds;
     _creatorCustomList = creatorIds.map((id) => _creatorById![id]).nonNulls.toList();
     _boothToCreatorCustomList = _buildBoothMapping(_creatorCustomList!);
     
@@ -100,6 +111,7 @@ class CreatorDataProvider extends ChangeNotifier {
       _setError(e.toString());
     } finally {
       _setLoading(false);
+      _onInitialized?.call();
     }
   }
 
