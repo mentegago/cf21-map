@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -52,6 +53,13 @@ class CreatorDataProvider extends ChangeNotifier {
   void setSelectedCreator(Creator? creator) {
     _selectedCreator = creator;
     notifyListeners();
+  }
+
+  void selectRandomCreator() {
+    if (_creators == null || _creators!.isEmpty) return;
+
+    final creator = _creators![Random().nextInt(_creators!.length)];
+    setSelectedCreator(creator);
   }
 
   void setCreatorCustomList(List<int> creatorIds) {

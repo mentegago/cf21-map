@@ -5,15 +5,11 @@ import 'dart:html' as html;
 import '../services/map_parser.dart';
 import '../services/creator_data_service.dart';
 import '../utils/int_encoding.dart';
-import '../widgets/map_viewer.dart';
-import '../widgets/mobile/creator_detail_sheet.dart';
-import '../widgets/mobile/expandable_search.dart';
 import '../widgets/mobile/creator_selector_sheet.dart';
-import '../widgets/desktop/desktop_sidebar.dart';
-import '../widgets/github_button.dart';
-import '../widgets/version_notification.dart';
 import '../models/map_cell.dart';
 import '../models/creator.dart';
+import 'map_screen_desktop.dart';
+import 'map_screen_mobile.dart';
 import 'dart:async';
 
 class MapScreen extends StatefulWidget {
@@ -23,38 +19,17 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMixin {
+class _MapScreenState extends State<MapScreen> {
   List<MergedCell>? _mergedCells;
   int _rows = 0;
   int _cols = 0;
   bool _isLoading = true;
   String? _error;
-  late AnimationController _detailAnimationController;
-  late Animation<Offset> _detailSlideAnimation;
-  final GlobalKey<ExpandableSearchState> _expandableSearchKey = GlobalKey<ExpandableSearchState>();
 
   @override
   void initState() {
     super.initState();
-    _detailAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 350),
-      vsync: this,
-    );
-    _detailSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _detailAnimationController,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
     _loadMapData();
-  }
-
-  @override
-  void dispose() {
-    _detailAnimationController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadMapData() async {
@@ -92,22 +67,15 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   void _handleCreatorSelected(Creator creator) {
     final creatorProvider = context.read<CreatorDataProvider>();
     creatorProvider.setSelectedCreator(creator);
-    _detailAnimationController.forward();
 
     _updateQueryParametersIfNeeded(creator.id);
   }
 
-  void _clearSelection() async {
+  Future<void> _clearSelection() async {
     final creatorProvider = context.read<CreatorDataProvider>();
-    
-    if (!_isDesktop) {
-      await _detailAnimationController.reverse();
-    }
-
-    if (mounted) {
+    if (creatorProvider.selectedCreator != null) {
       creatorProvider.setSelectedCreator(null);
     }
-
     _updateQueryParametersIfNeeded(null);
   }
 
@@ -278,112 +246,27 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     final creators = context.select((CreatorDataProvider creatorProvider) => creatorProvider.creators);
     final selectedCreator = context.select((CreatorDataProvider creatorProvider) => creatorProvider.selectedCreator);
 
-    return Row(
-      children: [
-        if (creators != null)
-          DesktopSidebar(
-            creators: creators,
-            selectedCreator: selectedCreator,
-            onCreatorSelected: _handleCreatorSelected,
-            onClear: selectedCreator != null ? _clearSelection : null,
-          ),
-        
-        // Map viewer
-        Expanded(
-          child: Stack(
-            children: [
-              MapViewer(
-                mergedCells: _mergedCells!,
-                rows: _rows,
-                cols: _cols,
-                onBoothTap: _handleBoothTap,
-              ),
-              const GitHubButton(isDesktop: true),
-              const VersionNotification(isDesktop: true),
-            ],
-          ),
-        ),
-      ],
+    return MapScreenDesktopView(
+      mergedCells: _mergedCells!,
+      rows: _rows,
+      cols: _cols,
+      creators: creators,
+      selectedCreator: selectedCreator,
+      onCreatorSelected: _handleCreatorSelected,
+      onClearSelection: selectedCreator != null ? () => _clearSelection() : null,
+      onBoothTap: _handleBoothTap,
     );
   }
 
   Widget _buildMobileLayout(BuildContext context) {
-    final creators = context.select((CreatorDataProvider creatorProvider) => creatorProvider.creators);
-    final selectedCreator = context.select((CreatorDataProvider creatorProvider) => creatorProvider.selectedCreator); 
-    final isCreatorCustomListMode = context.select((CreatorDataProvider creatorProvider) => creatorProvider.isCreatorCustomListMode);
-
-    return Stack(
-      children: [
-        MapViewer(
-          mergedCells: _mergedCells!,
-          rows: _rows,
-          cols: _cols,
-          onBoothTap: _handleBoothTap,
-        ),
-        
-        const GitHubButton(isDesktop: false),
-
-        if (isCreatorCustomListMode)
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Material(
-              color: Theme.of(context).colorScheme.surfaceContainerLowest,
-              elevation: 6,
-              borderRadius: BorderRadius.circular(20),
-              clipBehavior: Clip.antiAlias,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "You're viewing a curated creator list",
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Only the creators selected by the list owner are shown on the map. Tap the search box above to see the creator list.",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-        const VersionNotification(isDesktop: false),
-        
-        if (selectedCreator != null)
-          SlideTransition(
-            position: _detailSlideAnimation,
-            child: CreatorDetailSheet(
-              creator: selectedCreator,
-              onClose: _clearSelection,
-              onRequestSearch: _handleMobileRequestSearch,
-            ),
-          ),
-
-        if (creators != null)
-          ExpandableSearch(
-            key: _expandableSearchKey,
-            creators: creators,
-            onCreatorSelected: _handleCreatorSelected,
-            onClear: selectedCreator != null ? _clearSelection : null,
-            selectedCreator: selectedCreator,
-          ),
-      ],
+    return MapScreenMobileView(
+      mergedCells: _mergedCells!,
+      rows: _rows,
+      cols: _cols,
+      onClearSelection: _clearSelection,
+      onCreatorSelected: _handleCreatorSelected,
+      onBoothTap: _handleBoothTap,
     );
-  }
-
-  void _handleMobileRequestSearch(String query) {
-    _expandableSearchKey.currentState?.performSearch(query);
   }
 }
 
