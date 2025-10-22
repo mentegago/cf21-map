@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/creator.dart';
 import '../services/settings_provider.dart';
+import '../utils/string_utils.dart';
 import '../utils/url_encoding.dart';
 
 class CreatorListView extends StatefulWidget {
@@ -52,7 +53,8 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     
     final lowerQuery = widget.searchQuery.toLowerCase().trim();
-    final filteredBoothQuery = _filterBoothFormat(lowerQuery);
+    final filteredBoothQuery = optimizedBoothFormat(lowerQuery);
+    final filteredFandomQuery = optimizeFandomFormat(lowerQuery);
     
     _cachedFilteredCreators = widget.creators.where((creator) {
       // Name matching
@@ -61,15 +63,15 @@ class _CreatorListViewState extends State<CreatorListView> {
       }
 
       // Booth matching
-      for (final booth in creator.booths) {
-        if (_filterBoothFormat(booth).startsWith(filteredBoothQuery)) {
+      for (final booth in creator.searchOptimizedBooths) {
+        if (optimizedBoothFormat(booth).startsWith(filteredBoothQuery)) {
           return true;
         }
       }
 
       // Fandom matching
-      for (final fandom in creator.fandoms) {
-        if (fandom.toLowerCase().contains(lowerQuery)) {
+      for (final fandom in creator.searchOptimizedFandoms) {
+        if (optimizeFandomFormat(fandom).contains(filteredFandomQuery)) {
           return true;
         }
       }
@@ -78,17 +80,6 @@ class _CreatorListViewState extends State<CreatorListView> {
     }).toList();
     
     return _cachedFilteredCreators!;
-  }
-
-  String _filterBoothFormat(String query) {
-    // Remove non-alphanumeric chars, make lower, and drop zeroes after letters (e.g. "AB08" => "ab8")
-    return query
-      .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
-      .replaceAllMapped(
-        RegExp(r'([a-zA-Z])0+'), 
-        (m) => m.group(1) ?? ''
-      )
-      .toLowerCase();
   }
 
   @override

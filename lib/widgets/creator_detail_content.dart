@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import '../models/creator.dart';
 import '../utils/url_encoding.dart';
-import 'creator_avatar.dart';
 
 class CreatorDetailContent extends StatelessWidget {
   final Creator creator;

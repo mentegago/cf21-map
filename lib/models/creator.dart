@@ -1,3 +1,5 @@
+import '../utils/string_utils.dart';
+
 class CreatorInformation {
   final String title;
   final String content;
@@ -41,6 +43,10 @@ class Creator {
   final String? circleCut;
   final String? circleCode;
 
+  // Used for search optimization
+  final List<String> searchOptimizedBooths;
+  final List<String> searchOptimizedFandoms;
+
   Creator({
     required this.id,
     required this.userId,
@@ -55,7 +61,8 @@ class Creator {
     this.sampleworksImages = const [],
     this.circleCut,
     this.circleCode,
-  });
+  })  : searchOptimizedBooths = booths.map((booth) => optimizedBoothFormat(booth)).toList(),
+        searchOptimizedFandoms = fandoms.map((fandom) => optimizeFandomFormat(fandom)).toList();
 
   factory Creator.fromJson(Map<String, dynamic> json) {
     final infosJson = (json['informations'] as List?) ?? const [];
