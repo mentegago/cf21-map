@@ -243,17 +243,12 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildDesktopLayout(BuildContext context) {
-    final creators = context.select((CreatorDataProvider creatorProvider) => creatorProvider.creators);
-    final selectedCreator = context.select((CreatorDataProvider creatorProvider) => creatorProvider.selectedCreator);
-
     return MapScreenDesktopView(
       mergedCells: _mergedCells!,
       rows: _rows,
       cols: _cols,
-      creators: creators,
-      selectedCreator: selectedCreator,
       onCreatorSelected: _handleCreatorSelected,
-      onClearSelection: selectedCreator != null ? () => _clearSelection() : null,
+      onClearSelection: _clearSelection,
       onBoothTap: _handleBoothTap,
     );
   }
