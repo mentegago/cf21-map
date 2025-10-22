@@ -281,14 +281,7 @@ class _StatusSnackbarListenerState extends State<_StatusSnackbarListener> {
         if (_previousStatus != provider.status) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              if (provider.status == CreatorDataStatus.updating) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Updating creator booth list'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              } else if (provider.status == CreatorDataStatus.updated) {
+              if (provider.status == CreatorDataStatus.updated) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Creator booth list updated'),

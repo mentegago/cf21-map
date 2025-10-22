@@ -50,8 +50,8 @@ class FABButton extends StatelessWidget {
               child: Row(
                 spacing: 8,
                 children: [
-                  Icon(Icons.shuffle, size: 24),
-                  Text("I'm Feeling Lucky"),
+                  Icon(Icons.auto_awesome, size: 24),
+                  Text("Surprise me!"),
                 ],
               ),
             ),
@@ -77,16 +77,10 @@ class FABButton extends StatelessWidget {
             onTap: () => _launchGitHubUrl(),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Row(
-                spacing: 8,
-                children: [
-                  SvgPicture.asset(
-                    githubIcon,
-                    width: 24,
-                    height: 24,
-                  ),
-                  if (isDesktop) const Text("Source Code"),
-                ],
+              child: SvgPicture.asset(
+                githubIcon,
+                width: 24,
+                height: 24,
               ),
             ),
           ),
