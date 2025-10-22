@@ -196,7 +196,6 @@ class _CreatorDetailContentState extends State<CreatorDetailContent> {
 
   ClipRRect _headerSection(BuildContext context) {
     final theme = Theme.of(context);
-    final isDesktop = MediaQuery.of(context).size.width > 768;
 
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(12)),
