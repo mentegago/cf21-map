@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cf21_map_flutter/services/creator_data_service.dart';
 import 'package:cf21_map_flutter/services/favorites_service.dart';
 import 'package:cf21_map_flutter/utils/int_encoding.dart';
@@ -13,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/creator.dart';
 import '../services/settings_provider.dart';
+import '../utils/fuzzy_score.dart';
 import '../utils/string_utils.dart';
 import '../utils/url_encoding.dart';
 
@@ -52,32 +55,48 @@ class _CreatorListViewState extends State<CreatorListView> {
       return _cachedFilteredCreators!;
     }
     
-    final lowerQuery = widget.searchQuery.toLowerCase().trim();
-    final filteredBoothQuery = optimizedBoothFormat(lowerQuery);
-    final filteredFandomQuery = optimizeFandomFormat(lowerQuery);
-    
-    _cachedFilteredCreators = widget.creators.where((creator) {
-      // Name matching
-      if (creator.name.toLowerCase().contains(lowerQuery)) {
-        return true;
-      }
+    final trimmedQuery = widget.searchQuery.trim();
+    final filteredNameQuery = optimizeStringFormat(trimmedQuery);
+    final filteredBoothQuery = optimizedBoothFormat(trimmedQuery);
+    final filteredFandomQuery = optimizeStringFormat(trimmedQuery);
 
-      // Booth matching
+    _cachedFilteredCreators = widget.creators.map((creator) {
+      var maxScore = -1.0;
+      
+      // Check by booth number
       for (final booth in creator.searchOptimizedBooths) {
-        if (optimizedBoothFormat(booth).startsWith(filteredBoothQuery)) {
-          return true;
+        if (booth.startsWith(filteredBoothQuery)) {
+          maxScore = max(maxScore, 2.0);
+          break;
         }
       }
 
-      // Fandom matching
+      // Check by name
+      final nameScore = fuzzyScore(filteredNameQuery, creator.searchOptimizedName);
+      if (nameScore.matched) {
+        maxScore = max(maxScore, nameScore.score);
+      }
+      
+      // Fandom check
       for (final fandom in creator.searchOptimizedFandoms) {
-        if (optimizeFandomFormat(fandom).contains(filteredFandomQuery)) {
-          return true;
+        final fandomScore = fuzzyScore(filteredFandomQuery, fandom);
+        if (fandomScore.matched) {
+          maxScore = max(maxScore, fandomScore.score);
         }
       }
 
-      return false;
-    }).toList();
+      if (maxScore < 0.0) return null;
+
+      return (creator, maxScore);
+    })
+    .nonNulls
+    .sorted((a, b) {
+      final scoreCmp = b.$2.compareTo(a.$2);
+      if (scoreCmp != 0) return scoreCmp;
+      return a.$1.name.toLowerCase().compareTo(b.$1.name.toLowerCase());
+    })
+    .map((result) => result.$1)
+    .toList();
     
     return _cachedFilteredCreators!;
   }

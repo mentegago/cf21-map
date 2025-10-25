@@ -1,4 +1,4 @@
-String optimizeFandomFormat(String query) {
+String optimizeStringFormat(String query) {
   final buffer = StringBuffer();
   for (int i = 0; i < query.length; i++) {
     final code = query.codeUnitAt(i);
