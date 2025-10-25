@@ -45,6 +45,7 @@ class Creator {
 
   // Used for search optimization
   final List<String> searchOptimizedBooths;
+  final List<String> searchOptimizedFandoms;
 
   Creator({
     required this.id,
@@ -60,7 +61,12 @@ class Creator {
     this.sampleworksImages = const [],
     this.circleCut,
     this.circleCode,
-  })  : searchOptimizedBooths = booths.map((booth) => optimizedBoothFormat(booth)).toList();
+  })  : searchOptimizedBooths = booths.map((booth) => optimizedBoothFormat(booth)).toList(),
+        searchOptimizedFandoms = 
+          fandoms
+            .map((fandom) => optimizeStringFormat(fandom))
+            .where((fandom) => fandom.isNotEmpty)
+            .toList();
 
   factory Creator.fromJson(Map<String, dynamic> json) {
     final infosJson = (json['informations'] as List?) ?? const [];

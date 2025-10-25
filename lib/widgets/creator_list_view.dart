@@ -55,7 +55,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       return _cachedFilteredCreators!;
     }
     
-    final trimmedQuery = widget.searchQuery.trim();
+    final trimmedQuery = widget.searchQuery.trim().toLowerCase();
     final optimizedQuery = optimizeStringFormat(trimmedQuery);
     final optimizedBoothQuery = optimizedBoothFormat(trimmedQuery);  // Ensure writing things like "AB08" would output put "ab8"
 
@@ -79,6 +79,14 @@ class _CreatorListViewState extends State<CreatorListView> {
       // Fandom check - Ensure writing things like "BA" or "ZZZ" would output put "Blue Archive" and "Zenless Zone Zero" above other creators.
       for (final fandom in creator.fandoms) {
         final fandomScore = fuzzyScore(optimizedQuery, fandom.toLowerCase());
+        if (fandomScore.matched) {
+          maxScore = max(maxScore, fandomScore.score);
+        }
+      }
+
+      // Reverse fandom check - Fuzzy search for fandoms that are similar to the query.
+      for (final fandom in creator.searchOptimizedFandoms) {
+        final fandomScore = fuzzyScore(fandom, trimmedQuery);
         if (fandomScore.matched) {
           maxScore = max(maxScore, fandomScore.score);
         }
