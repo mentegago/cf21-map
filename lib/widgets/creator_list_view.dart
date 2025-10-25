@@ -56,36 +56,35 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     
     final trimmedQuery = widget.searchQuery.trim();
-    final filteredNameQuery = optimizeStringFormat(trimmedQuery);
-    final filteredBoothQuery = optimizedBoothFormat(trimmedQuery);
-    final filteredFandomQuery = optimizeStringFormat(trimmedQuery);
+    final optimizedQuery = optimizeStringFormat(trimmedQuery);
+    final optimizedBoothQuery = optimizedBoothFormat(trimmedQuery);  // Ensure writing things like "AB08" would output put "ab8"
 
     _cachedFilteredCreators = widget.creators.map((creator) {
       var maxScore = -1.0;
       
       // Check by booth number
       for (final booth in creator.searchOptimizedBooths) {
-        if (booth.startsWith(filteredBoothQuery)) {
+        if (booth.startsWith(optimizedBoothQuery)) {
           maxScore = max(maxScore, 2.0);
           break;
         }
       }
 
       // Check by name
-      final nameScore = fuzzyScore(filteredNameQuery, creator.searchOptimizedName);
+      final nameScore = fuzzyScore(optimizedQuery, creator.name.toLowerCase());
       if (nameScore.matched) {
         maxScore = max(maxScore, nameScore.score);
       }
-      
-      // Fandom check
-      for (final fandom in creator.searchOptimizedFandoms) {
-        final fandomScore = fuzzyScore(filteredFandomQuery, fandom);
+
+      // Fandom check - Ensure writing things like "BA" or "ZZZ" would output put "Blue Archive" and "Zenless Zone Zero" above other creators.
+      for (final fandom in creator.fandoms) {
+        final fandomScore = fuzzyScore(optimizedQuery, fandom.toLowerCase());
         if (fandomScore.matched) {
           maxScore = max(maxScore, fandomScore.score);
         }
       }
 
-      if (maxScore < 0.0) return null;
+      if (maxScore < 0.7) return null;
 
       return (creator, maxScore);
     })
