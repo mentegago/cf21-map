@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import 'sample_works_gallery.dart';
+
 class CreatorTileCard extends StatefulWidget {
   const CreatorTileCard({
     super.key,
@@ -108,25 +110,38 @@ class _CreatorTileCardState extends State<CreatorTileCard> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(
-                                widget.creator.name,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.creator.name,
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      widget.creator.boothsDisplay,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                              Text(
-                                widget.creator.boothsDisplay,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                              if (widget.creator.sampleworksImages.isNotEmpty)
+                                IconButton(
+                                  icon: widget.creator.sampleworksImages.length > 1 ? const Icon(Icons.photo_library) : const Icon(Icons.photo),
+                                  onPressed: () {
+                                    showSampleWorksGallery(context: context, imageUrls: widget.creator.sampleworksImages);
+                                  },
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
                             ],
                           ),
                         ),

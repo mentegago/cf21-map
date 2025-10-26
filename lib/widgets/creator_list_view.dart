@@ -268,7 +268,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       }
       else {
         return Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 8),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
           child: Text(
             'Check us out~',
             style: TextStyle(
@@ -292,7 +292,7 @@ class _CreatorListViewState extends State<CreatorListView> {
         (c) => c.id == 5450
       );
       return featuredCreator != null 
-        ? CreatorTileFeatured(creator: featuredCreator, onCreatorSelected: widget.onCreatorSelected)
+        ? CreatorTile(creator: featuredCreator, onCreatorSelected: widget.onCreatorSelected)
         : const SizedBox.shrink();
     }
     currentIndex++;

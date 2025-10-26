@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../utils/string_utils.dart';
 
 class CreatorInformation {
@@ -91,7 +93,7 @@ class Creator {
           .map((e) => CreatorUrl.fromJson(e))
           .toList(),
       worksType: worksTypeJson.map((e) => e.toString()).toList(),
-      fandoms: fandomsJson.map((e) => e.toString()).toList(),
+      fandoms: fandomsJson.map((e) => e.toString()).toList().sortedBy((e) => e),
       sampleworksImages: sampleworksImagesJson.map((e) => e.toString()).toList(),
       circleCut: json['circle_cut'] as String?,
       circleCode: json['circle_code'] as String?,

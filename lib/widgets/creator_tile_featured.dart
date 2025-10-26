@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
 import '../models/creator.dart';
+import 'sample_works_gallery.dart';
 
 class CreatorTileFeatured extends StatefulWidget {
   const CreatorTileFeatured({
@@ -90,6 +91,14 @@ class _CreatorTileFeaturedState extends State<CreatorTileFeatured> {
                   '${widget.creator.boothsDisplay} • ${widget.creator.dayDisplay}',
                   style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                 ),
+                trailing: widget.creator.sampleworksImages.isNotEmpty 
+                  ? IconButton(
+                    icon: widget.creator.sampleworksImages.length > 1 ? const Icon(Icons.photo_library) : const Icon(Icons.photo),
+                    onPressed: () {
+                      showSampleWorksGallery(context: context, imageUrls: widget.creator.sampleworksImages);
+                    },
+                  ) 
+                  : null,
                 onTap: () => widget.onCreatorSelected(widget.creator),
               ),
             ),
