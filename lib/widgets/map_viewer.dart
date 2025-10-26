@@ -30,6 +30,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
   late List<List<String?>> _boothLookupGrid; // O(1) spatial lookup
   late AnimationController _animationController;
   Animation<Matrix4>? _animation;
+  int _animationId = 0;
 
   bool get _isDesktop => MediaQuery.of(context).size.width > 768;
 
@@ -135,6 +136,16 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
   }
 
   void _centerOnBooths(List<String> boothIds) {
+    // Increment animation ID to invalidate any pending animation delays
+    _animationId++;
+    final currentAnimationId = _animationId;
+    
+    // Stop any running animation immediately - don't reset so it stays at current position
+    _animationController.stop();
+    
+    // Remove old animation listener if it exists
+    _animation?.removeListener(_animationListener);
+    
     // Find all booth cells
     final boothCells = widget.mergedCells.where(
       (cell) => boothIds.contains(cell.content),
@@ -154,17 +165,6 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     final avgX = totalX / boothCells.length;
     final avgY = totalY / boothCells.length;
 
-    // Get the viewport size
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    
-    // On desktop, account for sidebar width (400px)
-    final viewportWidth = _isDesktop ? screenWidth - 400 : screenWidth;
-    final viewportHeight = screenHeight;
-
-    // Get the current transformation
-    final currentTransform = _transformationController.value;
-    
     // Determine target zoom based on booth area
     // Multi-letter areas (AA-AF) need more zoom out to see context
     bool isMultiLetterArea = false;
@@ -178,34 +178,52 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     }
     final targetScale = isMultiLetterArea ? 0.6 : 0.8;
 
-    // Calculate the translation to center the booths with target zoom
-    final translationX = viewportWidth / 2 - avgX * targetScale;
-    final translationY = viewportHeight / (_isDesktop ? 2 : 3) - avgY * targetScale;
-
-    // Create target transformation
-    final targetTransform = Matrix4.identity()
-      ..translate(translationX, translationY)
-      ..scale(targetScale);
-
-    // Animate from current to target transformation
-    _animation = Matrix4Tween(
-      begin: currentTransform,
-      end: targetTransform,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOutCubic,
-    ));
-
     // Delay animation to let search panel finish closing
     Future.delayed(const Duration(milliseconds: 250), () {
-      if (!mounted) return;
+      if (!mounted || currentAnimationId != _animationId) return;
+      
+      // Now get the current transform again in case user interacted with the map during the delay
+      final currentTransform = _transformationController.value;
+      
+      // Get the viewport size
+      final screenWidth = MediaQuery.of(context).size.width;
+      final screenHeight = MediaQuery.of(context).size.height;
+      
+      // On desktop, account for sidebar width (400px)
+      final viewportWidth = _isDesktop ? screenWidth - 400 : screenWidth;
+      final viewportHeight = screenHeight;
+
+      // Calculate the translation to center the booths with target zoom
+      final translationX = viewportWidth / 2 - avgX * targetScale;
+      final translationY = viewportHeight / (_isDesktop ? 2 : 3) - avgY * targetScale;
+
+      // Create target transformation
+      final targetTransform = Matrix4.identity()
+        ..translate(translationX, translationY)
+        ..scale(targetScale);
+      
+      // Animate from current actual position to target transformation
+      _animation = Matrix4Tween(
+        begin: currentTransform,
+        end: targetTransform,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOutCubic,
+      ));
+      
+      // Reset and start the new animation
       _animationController.reset();
       _animationController.forward();
 
-      _animation!.addListener(() {
-        _transformationController.value = _animation!.value;
-      });
+      _animation!.addListener(_animationListener);
     });
+  }
+
+  // Animation listener that updates transformation
+  void _animationListener() {
+    if (_animation != null) {
+      _transformationController.value = _animation!.value;
+    }
   }
 
   // O(1) booth lookup using precomputed grid
