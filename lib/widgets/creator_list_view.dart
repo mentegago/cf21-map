@@ -61,45 +61,60 @@ class _CreatorListViewState extends State<CreatorListView> {
 
     _cachedFilteredCreators = widget.creators.map((creator) {
       var maxScore = -1.0;
+      var maxScoreStringScore = -1.0;
       
       // Check by booth number
       for (final booth in creator.searchOptimizedBooths) {
         if (booth.startsWith(optimizedBoothQuery)) {
           maxScore = max(maxScore, 2.0);
+          maxScoreStringScore = max(maxScoreStringScore, 2.0);
           break;
         }
       }
 
       // Check by name
       final nameScore = fuzzyScore(optimizedQuery, creator.name.toLowerCase());
-      if (nameScore.matched) {
+      final nameStringScore = optimizedQuery.length / creator.name.length.toDouble();
+
+      if (nameScore.matched && nameStringScore > maxScoreStringScore) {
         maxScore = max(maxScore, nameScore.score);
+        maxScoreStringScore = nameStringScore;
       }
 
       // Fandom check - Ensure writing things like "BA" or "ZZZ" would output put "Blue Archive" and "Zenless Zone Zero" above other creators.
       for (final fandom in creator.fandoms) {
         final fandomScore = fuzzyScore(optimizedQuery, fandom.toLowerCase());
-        if (fandomScore.matched) {
+        final fandomStringScore = optimizedQuery.length / fandom.length.toDouble();
+
+        if (fandomScore.matched && fandomStringScore > maxScoreStringScore) {
           maxScore = max(maxScore, fandomScore.score);
+          maxScoreStringScore = fandomStringScore;
         }
       }
 
       // Reverse fandom check - Fuzzy search for fandoms that are similar to the query.
       for (final fandom in creator.searchOptimizedFandoms) {
-        final fandomScore = fuzzyScore(fandom, trimmedQuery);
-        if (fandomScore.matched) {
+        final fandomScore = fuzzyScore(fandom, optimizedQuery);
+        final fandomStringScore = fandom.length / trimmedQuery.length.toDouble();
+
+        if (fandomScore.matched && fandomStringScore > maxScoreStringScore) {
           maxScore = max(maxScore, fandomScore.score);
+          maxScoreStringScore = fandomStringScore;
         }
       }
 
       if (maxScore < 0.7) return null;
 
-      return (creator, maxScore);
+      return (creator, maxScore, maxScoreStringScore);
     })
     .nonNulls
     .sorted((a, b) {
       final scoreCmp = b.$2.compareTo(a.$2);
       if (scoreCmp != 0) return scoreCmp;
+
+      final scoreStringCmp = b.$3.compareTo(a.$3);
+      if (scoreStringCmp != 0) return scoreStringCmp;
+
       return a.$1.name.toLowerCase().compareTo(b.$1.name.toLowerCase());
     })
     .map((result) => result.$1)
