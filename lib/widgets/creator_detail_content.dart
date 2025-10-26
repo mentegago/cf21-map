@@ -306,10 +306,10 @@ class _CreatorDetailContentState extends State<CreatorDetailContent> {
                         launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                       },
                     ),
-                    if (widget.creator.sampleworksImages.isNotEmpty) ...[
+                    if (widget.creator.sampleworksImages.isNotEmpty)
                       ElevatedButton.icon(
-                        icon: const Icon(Icons.photo_library),
-                        label: const Text('Sampleworks'),
+                        icon: widget.creator.sampleworksImages.length > 1 ? const Icon(Icons.photo_library) : const Icon(Icons.photo),
+                        label: Text('Samplework${widget.creator.sampleworksImages.length > 1 ? 's' : ''}'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.colorScheme.primaryContainer,
                           foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -322,7 +322,6 @@ class _CreatorDetailContentState extends State<CreatorDetailContent> {
                           );
                         },
                       ),
-                    ],
                   ],
                 ),
               ],

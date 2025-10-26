@@ -64,7 +64,7 @@ class _CreatorTileState extends State<CreatorTile> {
           leading: CreatorAvatar(creator: widget.creator),
           trailing: widget.creator.sampleworksImages.isNotEmpty 
             ? IconButton(
-              icon: const Icon(Icons.photo_library),
+              icon: widget.creator.sampleworksImages.length > 1 ? const Icon(Icons.photo_library) : const Icon(Icons.photo),
               onPressed: () {
                 showSampleWorksGallery(context: context, imageUrls: widget.creator.sampleworksImages);
               },
