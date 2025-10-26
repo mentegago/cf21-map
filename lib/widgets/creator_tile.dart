@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
 import 'creator_avatar.dart';
+import 'sample_works_gallery.dart';
 
 class CreatorTile extends StatefulWidget {
   const CreatorTile({
@@ -61,6 +62,14 @@ class _CreatorTileState extends State<CreatorTile> {
           : Colors.transparent,
         child: ListTile(
           leading: CreatorAvatar(creator: widget.creator),
+          trailing: widget.creator.sampleworksImages.isNotEmpty 
+            ? IconButton(
+              icon: const Icon(Icons.photo_library),
+              onPressed: () {
+                showSampleWorksGallery(context: context, imageUrls: widget.creator.sampleworksImages);
+              },
+            ) 
+            : null,
           title: Text(
             widget.creator.name,
             style: const TextStyle(fontWeight: FontWeight.bold),

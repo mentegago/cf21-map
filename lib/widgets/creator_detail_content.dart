@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cf21_map_flutter/widgets/favorite_button.dart';
+import 'package:cf21_map_flutter/widgets/sample_works_gallery.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
@@ -286,20 +287,43 @@ class _CreatorDetailContentState extends State<CreatorDetailContent> {
                   ),
                 ),
             
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
             
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('Open Circle Page'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    foregroundColor: theme.colorScheme.onPrimaryContainer,
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    final url = 'https://catalog.comifuro.net/circle/${widget.creator.id}';
-                    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                  },
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Circle Page'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        foregroundColor: theme.colorScheme.onPrimaryContainer,
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        final url = 'https://catalog.comifuro.net/circle/${widget.creator.id}';
+                        launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                      },
+                    ),
+                    if (widget.creator.sampleworksImages.isNotEmpty) ...[
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.photo_library),
+                        label: const Text('Sampleworks'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          foregroundColor: theme.colorScheme.onPrimaryContainer,
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          showSampleWorksGallery(
+                            context: context,
+                            imageUrls: widget.creator.sampleworksImages,
+                          );
+                        },
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
