@@ -4,7 +4,6 @@ import 'package:cf21_map_flutter/services/creator_data_service.dart';
 import 'package:cf21_map_flutter/services/favorites_service.dart';
 import 'package:cf21_map_flutter/utils/int_encoding.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile.dart';
-import 'package:cf21_map_flutter/widgets/creator_tile_featured.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile_card.dart';
 import 'dart:html' as html;
 
@@ -94,7 +93,7 @@ class _CreatorListViewState extends State<CreatorListView> {
 
       // Reverse fandom check - Fuzzy search for fandoms that are similar to the query.
       for (final fandom in creator.searchOptimizedFandoms) {
-        final fandomScore = fuzzyScore(fandom, optimizedQuery);
+        final fandomScore = fuzzyScore(fandom, trimmedQuery);
         final fandomStringScore = fandom.length / trimmedQuery.length.toDouble();
 
         if (fandomScore.matched && fandomStringScore > maxScoreStringScore) {
