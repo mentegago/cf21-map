@@ -305,7 +305,6 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
     final selectedCreator = creatorProvider.selectedCreator;
     final selectedBooths = selectedCreator?.booths;
     final boothToCreators = creatorProvider.boothToCreators;
-    final boothToCreatorList = creatorProvider.boothToCreatorCustomList;
     
     final isCreatorCustomListMode = creatorProvider.isCreatorCustomListMode;
     
@@ -347,7 +346,7 @@ class _MapViewerState extends State<MapViewer> with SingleTickerProviderStateMix
                     cellSize: _cellSize,
                     isDark: isDark,
                     scaffoldBackgroundColor: scaffoldBackgroundColor,
-                    boothToCreators: isCreatorCustomListMode ? boothToCreatorList : boothToCreators,
+                    boothToCreators: boothToCreators,
                     isCreatorCustomListMode: isCreatorCustomListMode,
                   ),
                 ),

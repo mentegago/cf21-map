@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/creator.dart';
 import '../utils/int_encoding.dart';
+import '../utils/url_encoding.dart';
 import 'creator_data_service.dart';
 
 class FavoritesService extends ChangeNotifier {
@@ -32,7 +34,7 @@ class FavoritesService extends ChangeNotifier {
       }
     }
     
-    return favoriteCreators;
+    return favoriteCreators.sorted((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }
 
   // Synchronous methods for fast access
@@ -60,6 +62,14 @@ class FavoritesService extends ChangeNotifier {
 
   List<int> favoriteIdsFromCode(String code) {
     return IntEncoding.stringCodeToInts(code);
+  }
+
+  /// Get the shareable URL for favorites
+  String getShareableUrl() {
+    final listCode = IntEncoding.intsToStringCode(
+      favorites.map((creator) => creator.id).toList()
+    );
+    return UrlEncoding.toUrl({'list': listCode});
   }
 
   // Debounced storage update

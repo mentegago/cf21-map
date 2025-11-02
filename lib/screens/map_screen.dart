@@ -83,8 +83,7 @@ class _MapScreenState extends State<MapScreen> {
     if (boothId == null) return;
     
     final creatorProvider = context.read<CreatorDataProvider>();
-    final isCreatorCustomListMode = creatorProvider.isCreatorCustomListMode;
-    final boothToCreators = isCreatorCustomListMode ? creatorProvider.boothToCreatorCustomList : creatorProvider.boothToCreators;
+    final boothToCreators = creatorProvider.boothToCreators;
     if (boothToCreators == null) return;
     
     final creators = boothToCreators[boothId];

@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:cf21_map_flutter/services/creator_data_service.dart';
 import 'package:cf21_map_flutter/services/favorites_service.dart';
-import 'package:cf21_map_flutter/utils/int_encoding.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile.dart';
 import 'package:cf21_map_flutter/widgets/creator_tile_card.dart';
 import 'dart:html' as html;
@@ -16,19 +15,20 @@ import '../models/creator.dart';
 import '../services/settings_provider.dart';
 import '../utils/fuzzy_score.dart';
 import '../utils/string_utils.dart';
-import '../utils/url_encoding.dart';
 
 class CreatorListView extends StatefulWidget {
   final List<Creator> creators;
   final String searchQuery;
   final Function(Creator) onCreatorSelected;
   final ScrollController? scrollController;
-
+  final VoidCallback onShouldHideListScreen;
+  
   const CreatorListView({
     super.key,
     required this.creators,
     required this.searchQuery,
     required this.onCreatorSelected,
+    required this.onShouldHideListScreen,
     this.scrollController
   });
 
@@ -144,7 +144,7 @@ class _CreatorListViewState extends State<CreatorListView> {
         Expanded(
           child: widget.searchQuery.isNotEmpty 
             ? _buildSearchResults(context, useCardView) 
-            : _buildMainView(context, useCardView),
+            : _buildMainView(context, useCardView, widget.onShouldHideListScreen),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -225,10 +225,10 @@ class _CreatorListViewState extends State<CreatorListView> {
     );
   }
 
-  Widget _buildMainView(BuildContext context, bool useCardView) {
+  Widget _buildMainView(BuildContext context, bool useCardView, VoidCallback onShouldHideListScreen) {
     final theme = Theme.of(context);
     final isCreatorCustomListMode = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.isCreatorCustomListMode);
-
+    final isCreatorCustomListFavorites = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.isCreatorCustomListFavorites);
     final List<Creator> favorites = isCreatorCustomListMode ? [] : context.select((FavoritesService favoritesService) => favoritesService.favorites);
     // Calculate total item count for ListView.builder
     int itemCount = 0;
@@ -252,18 +252,26 @@ class _CreatorListViewState extends State<CreatorListView> {
       controller: widget.scrollController,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode, useCardView);
+        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode, useCardView, isCreatorCustomListFavorites, onShouldHideListScreen);
       },
     );
   }
 
-  Widget _buildItemAtIndex(int index, ThemeData theme, List<Creator> favorites, bool isCreatorCustomListMode, bool useCardView) {
+  Widget _buildItemAtIndex(
+    int index, 
+    ThemeData theme, 
+    List<Creator> favorites, 
+    bool isCreatorCustomListMode, 
+    bool useCardView, 
+    bool isCreatorCustomListFavorites,
+    VoidCallback onShouldHideListScreen,
+  ) {
     int currentIndex = 0;
 
     // Featured section
     if (index == currentIndex) {
       if (isCreatorCustomListMode) {
-        return const _SeeAllCreatorsButton();
+        return _SeeAllCreatorsButton(onShouldHideListScreen: onShouldHideListScreen);
       }
       else {
         return Padding(
@@ -299,18 +307,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     // Favorites section
     if (favorites.isNotEmpty) {
       if (index == currentIndex) {
-        return Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
-          child: Text(
-            'Favorites',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              letterSpacing: 0.5,
-            ),
-          ),
-        );
+        return _FavoritesSectionHeader(onShouldHideListScreen: onShouldHideListScreen);
       }
       currentIndex++;
       
@@ -345,7 +342,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     currentIndex++;
 
-    if (index == currentIndex && isCreatorCustomListMode) {
+    if (index == currentIndex && isCreatorCustomListMode && !isCreatorCustomListFavorites) {
       return _AddAllToFavoritesButton(filteredCreators: _filteredCreators);
     }
     currentIndex++;
@@ -362,8 +359,23 @@ class _CreatorListViewState extends State<CreatorListView> {
   }
 }
 
+void _shareFavorites(BuildContext context) {
+  final provider = context.read<FavoritesService>();
+  final url = provider.getShareableUrl();
+  Clipboard.setData(ClipboardData(text: url));
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Shareable Favorites URL copied!'),
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
 class _SeeAllCreatorsButton extends StatelessWidget {
-  const _SeeAllCreatorsButton();
+  final VoidCallback onShouldHideListScreen;
+  const _SeeAllCreatorsButton({
+    required this.onShouldHideListScreen,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -412,11 +424,12 @@ class _SeeAllCreatorsButton extends StatelessWidget {
               ),
             ),
             onPressed: () {
-              if (kIsWeb) {
+              if (kIsWeb && !context.read<CreatorDataProvider>().isCreatorCustomListFavorites) {
                 html.window.location.assign('/');
               } 
               else {
                 context.read<CreatorDataProvider>().clearCreatorCustomList();
+                onShouldHideListScreen();
               }
             },
           ),
@@ -490,40 +503,107 @@ class _ShareFavorites extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: FilledButton.tonalIcon(
-        style: FilledButton.styleFrom(
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           visualDensity: VisualDensity.compact,
+          backgroundColor: const Color.fromARGB(255, 221, 41, 101),
+          foregroundColor: Colors.white,
+          textStyle: const TextStyle(color: Colors.white),
         ),
-        icon: const Icon(Icons.share, size: 16),
+        icon: const Icon(Icons.share, size: 16, color: Colors.white),
         label: const Text(
           'Share Favorites',
           style: TextStyle(
             fontWeight: FontWeight.w400,
             fontSize: 13,
             letterSpacing: 0.1,
+            color: Colors.white,
           ),
         ),
-        onPressed: () {
-          final provider = context.read<FavoritesService>();
-          final listCode = IntEncoding
-            .intsToStringCode(
-              provider
-                .favorites
-                .map((creator) => creator.id)
-                .toList()
-              );
-          
-          final url = UrlEncoding.toUrl({'list': listCode});
-          Clipboard.setData(ClipboardData(text: url));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Shareable Favorites URL copied!'),
-              duration: Duration(seconds: 2),
+        onPressed: () => _shareFavorites(context),
+      ),
+    );
+  }
+}
+
+class _FavoritesSectionHeader extends StatelessWidget {
+  final VoidCallback onShouldHideListScreen;
+  const _FavoritesSectionHeader({
+    required this.onShouldHideListScreen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Favorites',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                letterSpacing: 0.5,
+              ),
             ),
-          );
-        },
+          ),
+          TextButton.icon(
+            onPressed: () {
+              final creatorProvider = context.read<CreatorDataProvider>();
+              final favorites = context.read<FavoritesService>().favorites;
+              final favoriteIds = favorites.map((c) => c.id).toList();
+              creatorProvider.setCreatorCustomList(favoriteIds, isFavorites: true);
+              onShouldHideListScreen();
+            },
+            icon: Icon(
+              Icons.map,
+              size: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+            label: Text(
+              'Show on Map',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () => _shareFavorites(context),
+            icon: Icon(
+              Icons.share,
+              size: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+            label: Text(
+              'Share',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
       ),
     );
   }

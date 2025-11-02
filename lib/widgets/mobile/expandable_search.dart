@@ -124,6 +124,9 @@ class ExpandableSearchState extends State<ExpandableSearch> {
                               searchQuery: value.text,
                               onCreatorSelected: _handleCreatorTap,
                               scrollController: _searchScrollController,
+                              onShouldHideListScreen: () {
+                                _collapse();
+                              },
                             );
                           },
                         ),

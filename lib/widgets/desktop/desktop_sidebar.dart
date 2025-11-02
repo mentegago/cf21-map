@@ -201,6 +201,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
           searchQuery: value.text,
           onCreatorSelected: _handleCreatorSelected,
           scrollController: _searchScrollController,
+          onShouldHideListScreen: () {},
         );
       },
     );

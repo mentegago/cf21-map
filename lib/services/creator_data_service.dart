@@ -32,6 +32,7 @@ class CreatorDataProvider extends ChangeNotifier {
   Timer? _updateTimer;
   Creator? _selectedCreator;
   List<int>? _creatorCustomListIds;
+  bool _isCreatorCustomListFavorites = false;
   List<Creator>? _creatorCustomList;
 
   Function? _onInitialized;
@@ -41,15 +42,19 @@ class CreatorDataProvider extends ChangeNotifier {
     if (isCreatorCustomListMode) return creatorCustomList;
     return _creators;
   }
-  
-  Map<String, List<Creator>>? get boothToCreators => _boothToCreators;
-  Map<String, List<Creator>>? get boothToCreatorCustomList => _boothToCreatorCustomList;
+
+  Map<String, List<Creator>>? get boothToCreators {
+    if (isCreatorCustomListMode) return _boothToCreatorCustomList;
+    return _boothToCreators;
+  }
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   CreatorDataStatus get status => _status;
   Creator? get selectedCreator => _selectedCreator;
   List<Creator>? get creatorCustomList => _creatorCustomList;
   bool get isCreatorCustomListMode => _creatorCustomListIds != null;
+  bool get isCreatorCustomListFavorites => _isCreatorCustomListFavorites;
 
   void onCreatorDataServiceInitialized(Function callback) {
     _onInitialized = callback;
@@ -72,12 +77,17 @@ class CreatorDataProvider extends ChangeNotifier {
     setSelectedCreator(creator);
   }
 
-  void setCreatorCustomList(List<int> creatorIds) {
+  void setCreatorCustomList(List<int> creatorIds, {bool isFavorites = false}) {
     _creatorCustomListIds = creatorIds;
+    _isCreatorCustomListFavorites = isFavorites;
 
     if (_creatorById == null) return;
 
-    _creatorCustomList = creatorIds.map((id) => _creatorById![id]).nonNulls.toList();
+    _creatorCustomList = creatorIds
+        .map((id) => _creatorById![id])
+        .nonNulls
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _boothToCreatorCustomList = _buildBoothMapping(_creatorCustomList!);
     
     notifyListeners();
@@ -87,7 +97,8 @@ class CreatorDataProvider extends ChangeNotifier {
     _creatorCustomListIds = null;
     _creatorCustomList = null;
     _boothToCreatorCustomList = null;
-
+    _isCreatorCustomListFavorites = false;
+    
     if (kIsWeb) {
       html.window.history.pushState(null, '', '/');
     }
@@ -249,8 +260,7 @@ class CreatorDataProvider extends ChangeNotifier {
     _creatorById = _buildCreatorIdMapping(creators);
 
     if (isCreatorCustomListMode) {
-      // Re-update the current creator list with the new creators
-      setCreatorCustomList(_creatorCustomListIds!);
+      setCreatorCustomList(_creatorCustomListIds!, isFavorites: _isCreatorCustomListFavorites);
     }
     
     notifyListeners();
