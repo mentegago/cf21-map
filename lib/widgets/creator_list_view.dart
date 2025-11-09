@@ -213,17 +213,6 @@ class _CreatorListViewState extends State<CreatorListView> {
         }
       }
 
-      // Reverse fandom check - Fuzzy search for fandoms that are similar to the query.
-      for (final fandom in creator.searchOptimizedFandoms) {
-        final fandomScore = fuzzyScore(fandom, trimmedQuery);
-        final fandomStringScore = fandom.length / trimmedQuery.length.toDouble();
-
-        if (fandomScore.matched && fandomStringScore > maxScoreStringScore) {
-          maxScore = max(maxScore, fandomScore.score);
-          maxScoreStringScore = fandomStringScore;
-        }
-      }
-
       if (maxScore < 0.7) return null;
 
       return (creator, maxScore, maxScoreStringScore);
