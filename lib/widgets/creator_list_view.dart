@@ -23,6 +23,7 @@ class CreatorListView extends StatefulWidget {
   final ScrollController? scrollController;
   final VoidCallback onShouldHideListScreen;
   final VoidCallback? onClearSearch;
+  final Function(String)? onSearchQueryChanged;
   
   const CreatorListView({
     super.key,
@@ -32,6 +33,7 @@ class CreatorListView extends StatefulWidget {
     required this.onShouldHideListScreen,
     this.scrollController,
     this.onClearSearch,
+    this.onSearchQueryChanged,
   });
 
   @override
@@ -41,6 +43,124 @@ class CreatorListView extends StatefulWidget {
 class _CreatorListViewState extends State<CreatorListView> {
   List<Creator>? _cachedFilteredCreators;
   String? _lastSearchQuery;
+  List<String>? _cachedFandomSuggestions;
+  String? _lastFandomSearchQuery;
+  Map<String, int>? _fandomCounts;
+  String? _lastSelectedFandom;
+  
+  // Pre-calculate fandom popularity (count of creators per fandom)
+  void _computeFandomCounts() {
+    _fandomCounts = <String, int>{};
+    for (final creator in widget.creators) {
+      for (final fandom in creator.fandoms) {
+        _fandomCounts![fandom] = (_fandomCounts![fandom] ?? 0) + 1;
+      }
+    }
+  }
+  
+  Map<String, int> get _fandomPopularity {
+    // This should never be null after initState, but provide fallback for safety
+    return _fandomCounts ?? <String, int>{};
+  }
+  
+  // Extract unique fandoms from all creators
+  Set<String> get _allUniqueFandoms {
+    final fandoms = <String>{};
+    for (final creator in widget.creators) {
+      fandoms.addAll(creator.fandoms);
+    }
+    return fandoms;
+  }
+  
+  // Get fandom suggestions based on search query
+  List<String> get _fandomSuggestions {
+    if (widget.searchQuery.isEmpty) {
+      return [];
+    }
+    
+    // Return cached results if search query hasn't changed
+    if (_lastFandomSearchQuery == widget.searchQuery && _cachedFandomSuggestions != null) {
+      return _cachedFandomSuggestions!;
+    }
+    
+    // Update cache
+    _lastFandomSearchQuery = widget.searchQuery;
+    
+    final trimmedQuery = widget.searchQuery.trim().toLowerCase();
+    final optimizedQuery = optimizeStringFormat(trimmedQuery);
+    
+    final allFandoms = _allUniqueFandoms.toList();
+    
+    // Find max popularity to normalize popularity scores
+    final maxPopularity = _fandomPopularity.values.isEmpty 
+        ? 1 
+        : _fandomPopularity.values.reduce((a, b) => a > b ? a : b);
+    
+    final scoredFandoms = allFandoms.map((fandom) {
+      var maxScore = -1.0;
+      var maxScoreStringScore = -1.0;
+      
+      // Forward fandom check
+      final fandomScore = fuzzyScore(optimizedQuery, fandom.toLowerCase());
+      final fandomStringScore = optimizedQuery.length / fandom.length.toDouble();
+      
+      if (fandomScore.matched && fandomStringScore > maxScoreStringScore) {
+        maxScore = max(maxScore, fandomScore.score);
+        maxScoreStringScore = fandomStringScore;
+      }
+      
+      // Reverse fandom check - Fuzzy search for fandoms that are similar to the query
+      final optimizedFandom = optimizeStringFormat(fandom);
+      if (optimizedFandom.isNotEmpty) {
+        final reverseFandomScore = fuzzyScore(optimizedFandom, trimmedQuery);
+        final reverseFandomStringScore = optimizedFandom.length / trimmedQuery.length.toDouble();
+        
+        if (reverseFandomScore.matched && reverseFandomStringScore > maxScoreStringScore) {
+          maxScore = max(maxScore, reverseFandomScore.score);
+          maxScoreStringScore = reverseFandomStringScore;
+        }
+      }
+      
+      if (maxScore < 0.7) return null;
+      
+      // Get popularity count for this fandom
+      final popularity = _fandomPopularity[fandom] ?? 0;
+      
+      // Normalize popularity to 0-1 scale
+      final normalizedPopularity = maxPopularity > 0 ? popularity / maxPopularity : 0.0;
+      
+      // Combine fuzzy score with popularity using weighted formula
+      // Weight: 50% fuzzy score, 50% popularity
+      // This ensures popular fandoms rank higher even with slightly lower fuzzy scores
+      // Popular fandoms get significant boost to surface the most relevant results
+      final combinedScore = (maxScore * 0.5) + (normalizedPopularity * 0.5);
+      
+      return (fandom, maxScore, maxScoreStringScore, popularity, combinedScore);
+    })
+    .nonNulls
+    .sorted((a, b) {
+      // Primary sort: combined score (fuzzy score + popularity weighted)
+      final combinedCmp = b.$5.compareTo(a.$5);
+      if (combinedCmp != 0) return combinedCmp;
+      
+      // Secondary sort: fuzzy score (higher is better)
+      final scoreCmp = b.$2.compareTo(a.$2);
+      if (scoreCmp != 0) return scoreCmp;
+      
+      // Tertiary sort: popularity count (higher is better - more creators have this fandom)
+      final popularityCmp = b.$4.compareTo(a.$4);
+      if (popularityCmp != 0) return popularityCmp;
+      
+      // Final sort: alphabetical
+      return a.$1.toLowerCase().compareTo(b.$1.toLowerCase());
+    })
+    .map((result) => result.$1)
+    .take(5) // Limit to top 5 matches
+    .toList();
+    
+    _cachedFandomSuggestions = scoredFandoms;
+    return _cachedFandomSuggestions!;
+  }
   
   List<Creator> get _filteredCreators {
     // Return cached results if search query hasn't changed
@@ -125,13 +245,31 @@ class _CreatorListViewState extends State<CreatorListView> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Pre-compute fandom counts when widget is first created
+    _computeFandomCounts();
+  }
+
+  @override
   void didUpdateWidget(CreatorListView oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // If creators list has changed, clear cache and trigger rebuild
+    // Clear selected fandom when search query changes (meaning user manually typed)
+    // Only clear if the new query doesn't match the last selected fandom
+    if (oldWidget.searchQuery != widget.searchQuery) {
+      if (widget.searchQuery != _lastSelectedFandom) {
+        _lastSelectedFandom = null;
+      }
+    }
+    
+    // If creators list has changed, recompute fandom counts and clear cache
     if (oldWidget.creators != widget.creators) {
+      _computeFandomCounts(); // Recompute fandom counts
       _cachedFilteredCreators = null;
       _lastSearchQuery = null;
+      _cachedFandomSuggestions = null;
+      _lastFandomSearchQuery = null;
       setState(() {});
     }
   }
@@ -175,15 +313,42 @@ class _CreatorListViewState extends State<CreatorListView> {
 
   Widget _buildSearchResults(BuildContext context, bool useCardView) {
     final theme = Theme.of(context);
-    final itemCount = _filteredCreators.isEmpty 
-      ? 2 // results count header + no results message
-      : _filteredCreators.length + 1; // +1 for results count header
+    final fandomSuggestions = _fandomSuggestions;
+    final hasFandomSuggestions = fandomSuggestions.isNotEmpty && _lastSelectedFandom == null;
+    
+    // Calculate item count
+    int itemCount = 0;
+    if (hasFandomSuggestions) {
+      itemCount += 1; // Fandom suggestions section
+    }
+    itemCount += 1; // Results count header
+    if (_filteredCreators.isEmpty) {
+      itemCount += 1; // No results message
+    } else {
+      itemCount += _filteredCreators.length; // Creator results
+    }
     
     return ListView.builder(
       controller: widget.scrollController,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index == 0) {
+        // Fandom suggestions section (first if present)
+        if (hasFandomSuggestions && index == 0) {
+          return _FandomSuggestions(
+            suggestions: fandomSuggestions,
+            onSuggestionSelected: (fandom) {
+              setState(() {
+                _lastSelectedFandom = fandom;
+              });
+              widget.onSearchQueryChanged?.call(fandom);
+            },
+          );
+        }
+        
+        // Adjust index if fandom suggestions were shown
+        final adjustedIndex = hasFandomSuggestions ? index - 1 : index;
+        
+        if (adjustedIndex == 0) {
           // Results count header with "Show on Map" button
           return _SearchResultsHeader(
             resultCount: _filteredCreators.length,
@@ -217,7 +382,7 @@ class _CreatorListViewState extends State<CreatorListView> {
         }
         
         // Regular search result
-        final creator = _filteredCreators[index - 1];
+        final creator = _filteredCreators[adjustedIndex - 1];
         return useCardView ? CreatorTileCard(creator: creator, onCreatorSelected: widget.onCreatorSelected) : CreatorTile(creator: creator, onCreatorSelected: widget.onCreatorSelected);
       },
     );
@@ -589,6 +754,68 @@ class _SearchResultsHeader extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _FandomSuggestions extends StatelessWidget {
+  final List<String> suggestions;
+  final Function(String)? onSuggestionSelected;
+  
+  const _FandomSuggestions({
+    required this.suggestions,
+    this.onSuggestionSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    if (suggestions.isEmpty || onSuggestionSelected == null) {
+      return const SizedBox.shrink();
+    }
+    
+    return Container(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outline.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        ),
+      ),
+      child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: suggestions.map((fandom) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    label: Text(
+                      fandom,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    onPressed: () {
+                      onSuggestionSelected?.call(fandom);
+                    },
+                    backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    side: BorderSide(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
     );
   }
 }

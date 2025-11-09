@@ -206,6 +206,10 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
             _searchController.clear();
             _performSearch('');
           },
+          onSearchQueryChanged: (query) {
+            _searchController.text = query;
+            _performSearch(query);
+          },
         );
       },
     );
