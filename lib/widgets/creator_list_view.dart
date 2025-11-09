@@ -74,8 +74,25 @@ class _CreatorListViewState extends State<CreatorListView> {
   
   // Get fandom suggestions based on search query
   List<String> get _fandomSuggestions {
+    // If no search query, return top 5 most popular fandoms
     if (widget.searchQuery.isEmpty) {
-      return [];
+      final allFandoms = _allUniqueFandoms
+          .map((fandom) => (fandom, _fandomPopularity[fandom] ?? 0))
+          .sorted((a, b) {
+            // Sort by popularity (descending)
+            final popularityCmp = b.$2.compareTo(a.$2);
+            if (popularityCmp != 0) return popularityCmp;
+            // Then alphabetically
+            return a.$1.toLowerCase().compareTo(b.$1.toLowerCase());
+          })
+          .take(20)
+          .map((result) => result.$1)
+          .toList();
+
+      _lastFandomSearchQuery = widget.searchQuery;
+      _cachedFandomSuggestions = allFandoms;
+
+      return allFandoms;
     }
     
     // Return cached results if search query hasn't changed
@@ -155,7 +172,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       return a.$1.toLowerCase().compareTo(b.$1.toLowerCase());
     })
     .map((result) => result.$1)
-    .take(5) // Limit to top 5 matches
+    .take(20) // Limit to top 5 matches
     .toList();
     
     _cachedFandomSuggestions = scoredFandoms;
@@ -383,8 +400,16 @@ class _CreatorListViewState extends State<CreatorListView> {
     final showAddAllToFavorites = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.showAddAllToFavorites);
     final shouldRefreshOnReturn = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.shouldRefreshOnReturn);
     final List<Creator> favorites = isCreatorCustomListMode ? [] : context.select((FavoritesService favoritesService) => favoritesService.favorites);
+    final fandomSuggestions = _fandomSuggestions;
+    final hasFandomSuggestions = fandomSuggestions.isNotEmpty && _lastSelectedFandom == null;
+    
     // Calculate total item count for ListView.builder
     int itemCount = 0;
+    
+    // Fandom suggestions section
+    if (hasFandomSuggestions) {
+      itemCount += 1;
+    }
     
     // Featured section: header + featured creator
     itemCount += 2;
@@ -420,7 +445,25 @@ class _CreatorListViewState extends State<CreatorListView> {
     bool shouldRefreshOnReturn,
     VoidCallback onShouldHideListScreen,
   ) {
+    final fandomSuggestions = _fandomSuggestions;
+    final hasFandomSuggestions = fandomSuggestions.isNotEmpty && _lastSelectedFandom == null;
     int currentIndex = 0;
+
+    // Fandom suggestions section
+    if (hasFandomSuggestions) {
+      if (index == currentIndex) {
+        return _FandomSuggestions(
+          suggestions: fandomSuggestions,
+          onSuggestionSelected: (fandom) {
+            setState(() {
+              _lastSelectedFandom = fandom;
+            });
+            widget.onSearchQueryChanged?.call(fandom);
+          },
+        );
+      }
+      currentIndex++;
+    }
 
     // Featured section
     if (index == currentIndex) {
