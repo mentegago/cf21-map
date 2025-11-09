@@ -127,6 +127,10 @@ class ExpandableSearchState extends State<ExpandableSearch> {
                               onShouldHideListScreen: () {
                                 _collapse();
                               },
+                              onClearSearch: () {
+                                _searchController.clear();
+                                _performSearch('');
+                              },
                             );
                           },
                         ),

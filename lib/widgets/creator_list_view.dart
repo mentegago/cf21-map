@@ -22,6 +22,7 @@ class CreatorListView extends StatefulWidget {
   final Function(Creator) onCreatorSelected;
   final ScrollController? scrollController;
   final VoidCallback onShouldHideListScreen;
+  final VoidCallback? onClearSearch;
   
   const CreatorListView({
     super.key,
@@ -29,7 +30,8 @@ class CreatorListView extends StatefulWidget {
     required this.searchQuery,
     required this.onCreatorSelected,
     required this.onShouldHideListScreen,
-    this.scrollController
+    this.scrollController,
+    this.onClearSearch,
   });
 
   @override
@@ -182,16 +184,12 @@ class _CreatorListViewState extends State<CreatorListView> {
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == 0) {
-          // Results count header
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              '${_filteredCreators.length} result${_filteredCreators.length == 1 ? '' : 's'}',
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                fontSize: 14,
-              ),
-            ),
+          // Results count header with "Show on Map" button
+          return _SearchResultsHeader(
+            resultCount: _filteredCreators.length,
+            filteredCreators: _filteredCreators,
+            onShouldHideListScreen: widget.onShouldHideListScreen,
+            onClearSearch: widget.onClearSearch,
           );
         }
         
@@ -228,7 +226,8 @@ class _CreatorListViewState extends State<CreatorListView> {
   Widget _buildMainView(BuildContext context, bool useCardView, VoidCallback onShouldHideListScreen) {
     final theme = Theme.of(context);
     final isCreatorCustomListMode = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.isCreatorCustomListMode);
-    final isCreatorCustomListFavorites = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.isCreatorCustomListFavorites);
+    final showAddAllToFavorites = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.showAddAllToFavorites);
+    final shouldRefreshOnReturn = context.select((CreatorDataProvider creatorDataProvider) => creatorDataProvider.shouldRefreshOnReturn);
     final List<Creator> favorites = isCreatorCustomListMode ? [] : context.select((FavoritesService favoritesService) => favoritesService.favorites);
     // Calculate total item count for ListView.builder
     int itemCount = 0;
@@ -252,7 +251,7 @@ class _CreatorListViewState extends State<CreatorListView> {
       controller: widget.scrollController,
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode, useCardView, isCreatorCustomListFavorites, onShouldHideListScreen);
+        return _buildItemAtIndex(index, theme, favorites, isCreatorCustomListMode, useCardView, showAddAllToFavorites, shouldRefreshOnReturn, onShouldHideListScreen);
       },
     );
   }
@@ -263,7 +262,8 @@ class _CreatorListViewState extends State<CreatorListView> {
     List<Creator> favorites, 
     bool isCreatorCustomListMode, 
     bool useCardView, 
-    bool isCreatorCustomListFavorites,
+    bool showAddAllToFavorites,
+    bool shouldRefreshOnReturn,
     VoidCallback onShouldHideListScreen,
   ) {
     int currentIndex = 0;
@@ -342,7 +342,7 @@ class _CreatorListViewState extends State<CreatorListView> {
     }
     currentIndex++;
 
-    if (index == currentIndex && isCreatorCustomListMode && !isCreatorCustomListFavorites) {
+    if (index == currentIndex && isCreatorCustomListMode && showAddAllToFavorites) {
       return _AddAllToFavoritesButton(filteredCreators: _filteredCreators);
     }
     currentIndex++;
@@ -424,7 +424,7 @@ class _SeeAllCreatorsButton extends StatelessWidget {
               ),
             ),
             onPressed: () {
-              if (kIsWeb && !context.read<CreatorDataProvider>().isCreatorCustomListFavorites) {
+              if (kIsWeb && context.read<CreatorDataProvider>().shouldRefreshOnReturn) {
                 html.window.location.assign('/');
               } 
               else {
@@ -528,6 +528,71 @@ class _ShareFavorites extends StatelessWidget {
   }
 }
 
+class _SearchResultsHeader extends StatelessWidget {
+  final int resultCount;
+  final List<Creator> filteredCreators;
+  final VoidCallback onShouldHideListScreen;
+  final VoidCallback? onClearSearch;
+  
+  const _SearchResultsHeader({
+    required this.resultCount,
+    required this.filteredCreators,
+    required this.onShouldHideListScreen,
+    this.onClearSearch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$resultCount result${resultCount == 1 ? '' : 's'}',
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          if (filteredCreators.isNotEmpty)
+            TextButton.icon(
+              onPressed: () {
+                final creatorProvider = context.read<CreatorDataProvider>();
+                final searchResultIds = filteredCreators.map((c) => c.id).toList();
+                creatorProvider.setCreatorCustomList(searchResultIds, showAddAllToFavorites: true, shouldRefreshOnReturn: false);
+                onClearSearch?.call();
+                onShouldHideListScreen();
+              },
+              icon: Icon(
+                Icons.map,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              label: Text(
+                'Show on Map',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FavoritesSectionHeader extends StatelessWidget {
   final VoidCallback onShouldHideListScreen;
   const _FavoritesSectionHeader({
@@ -558,7 +623,7 @@ class _FavoritesSectionHeader extends StatelessWidget {
               final creatorProvider = context.read<CreatorDataProvider>();
               final favorites = context.read<FavoritesService>().favorites;
               final favoriteIds = favorites.map((c) => c.id).toList();
-              creatorProvider.setCreatorCustomList(favoriteIds, isFavorites: true);
+              creatorProvider.setCreatorCustomList(favoriteIds, showAddAllToFavorites: false, shouldRefreshOnReturn: false);
               onShouldHideListScreen();
             },
             icon: Icon(

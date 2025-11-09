@@ -32,7 +32,8 @@ class CreatorDataProvider extends ChangeNotifier {
   Timer? _updateTimer;
   Creator? _selectedCreator;
   List<int>? _creatorCustomListIds;
-  bool _isCreatorCustomListFavorites = false;
+  bool _showAddAllToFavorites = true;
+  bool _shouldRefreshOnReturn = true;
   List<Creator>? _creatorCustomList;
 
   Function? _onInitialized;
@@ -54,7 +55,8 @@ class CreatorDataProvider extends ChangeNotifier {
   Creator? get selectedCreator => _selectedCreator;
   List<Creator>? get creatorCustomList => _creatorCustomList;
   bool get isCreatorCustomListMode => _creatorCustomListIds != null;
-  bool get isCreatorCustomListFavorites => _isCreatorCustomListFavorites;
+  bool get showAddAllToFavorites => _showAddAllToFavorites;
+  bool get shouldRefreshOnReturn => _shouldRefreshOnReturn;
 
   void onCreatorDataServiceInitialized(Function callback) {
     _onInitialized = callback;
@@ -77,9 +79,10 @@ class CreatorDataProvider extends ChangeNotifier {
     setSelectedCreator(creator);
   }
 
-  void setCreatorCustomList(List<int> creatorIds, {bool isFavorites = false}) {
+  void setCreatorCustomList(List<int> creatorIds, {bool showAddAllToFavorites = true, bool shouldRefreshOnReturn = true}) {
     _creatorCustomListIds = creatorIds;
-    _isCreatorCustomListFavorites = isFavorites;
+    _showAddAllToFavorites = showAddAllToFavorites;
+    _shouldRefreshOnReturn = shouldRefreshOnReturn;
 
     if (_creatorById == null) return;
 
@@ -97,7 +100,8 @@ class CreatorDataProvider extends ChangeNotifier {
     _creatorCustomListIds = null;
     _creatorCustomList = null;
     _boothToCreatorCustomList = null;
-    _isCreatorCustomListFavorites = false;
+    _showAddAllToFavorites = true;
+    _shouldRefreshOnReturn = true;
     
     if (kIsWeb) {
       html.window.history.pushState(null, '', '/');
@@ -260,7 +264,11 @@ class CreatorDataProvider extends ChangeNotifier {
     _creatorById = _buildCreatorIdMapping(creators);
 
     if (isCreatorCustomListMode) {
-      setCreatorCustomList(_creatorCustomListIds!, isFavorites: _isCreatorCustomListFavorites);
+      setCreatorCustomList(
+        _creatorCustomListIds!, 
+        showAddAllToFavorites: _showAddAllToFavorites, 
+        shouldRefreshOnReturn: _shouldRefreshOnReturn,
+      );
     }
     
     notifyListeners();

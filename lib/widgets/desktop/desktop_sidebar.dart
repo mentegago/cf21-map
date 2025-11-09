@@ -202,6 +202,10 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
           onCreatorSelected: _handleCreatorSelected,
           scrollController: _searchScrollController,
           onShouldHideListScreen: () {},
+          onClearSearch: () {
+            _searchController.clear();
+            _performSearch('');
+          },
         );
       },
     );
