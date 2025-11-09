@@ -556,6 +556,18 @@ class _CreatorListViewState extends State<CreatorListView> {
   }
 }
 
+void _copyBoothCodeList(BuildContext context) {
+  final provider = context.read<FavoritesService>();
+  final boothList = provider.getBoothCodeList();
+  Clipboard.setData(ClipboardData(text: boothList));
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Favorites booth codes copied!'),
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
 void _shareFavorites(BuildContext context) {
   final provider = context.read<FavoritesService>();
   final url = provider.getShareableUrl();
@@ -720,6 +732,7 @@ class _ShareFavorites extends StatelessWidget {
           ),
         ),
         onPressed: () => _shareFavorites(context),
+        onLongPress: () => _copyBoothCodeList(context),
       ),
     );
   }
@@ -907,6 +920,7 @@ class _FavoritesSectionHeader extends StatelessWidget {
           ),
           TextButton.icon(
             onPressed: () => _shareFavorites(context),
+            onLongPress: () => _copyBoothCodeList(context),
             icon: Icon(
               Icons.share,
               size: 16,

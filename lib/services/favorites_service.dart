@@ -64,6 +64,14 @@ class FavoritesService extends ChangeNotifier {
     return IntEncoding.stringCodeToInts(code);
   }
 
+  String getBoothCodeList() {
+    final allBooths = <String>[];
+    for (final creator in favorites) {
+      allBooths.addAll(creator.booths);
+    }
+    return allBooths.join(',');
+  }
+
   /// Get the shareable URL for favorites
   String getShareableUrl() {
     final listCode = IntEncoding.intsToStringCode(
