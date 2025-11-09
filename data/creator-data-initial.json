@@ -1,5 +1,5 @@
 {
-  "version": 98,
+  "version": 99,
   "creators": [
     {
       "id": 5415,
@@ -5608,9 +5608,9 @@
       "fandoms": [
         "Cygames",
         "Granblue Fantasy",
+        "Idolmaster: Cinderella Girls",
         "Princess Connect! Re:Dive",
         "Shadowverse",
-        "The Idolm@ster Cinderella Girls",
         "Uma Musume"
       ],
       "works_type": [
@@ -6953,7 +6953,7 @@
         "Mihoyo"
       ],
       "fandoms": [
-        "Gakuen Idolmaster",
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
         "HoYoverse",
         "Uma Musume",
         "Zenless Zone Zero"
@@ -7940,7 +7940,7 @@
       ],
       "fandoms": [
         "Cosplay",
-        "The Idolm@ster",
+        "Idolmaster",
         "Uma Musume"
       ],
       "works_type": [
@@ -8899,8 +8899,8 @@
       "fandoms": [
         "Arknights",
         "Hololive",
-        "Original",
-        "The Idolm@ster Shiny Colors"
+        "Idolmaster Shiny Colors",
+        "Original"
       ],
       "works_type": [
         "Comic",
@@ -10680,7 +10680,7 @@
       ],
       "fandoms": [
         "Hololive",
-        "The Idolm@ster"
+        "Idolmaster"
       ],
       "works_type": [
         "Comic",
@@ -20551,7 +20551,7 @@
         "Rune Factory 4"
       ],
       "fandoms": [
-        "Gakuen Idolmaster",
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
         "Genshin Impact",
         "Gintama",
         "Honkai Star Rail",
@@ -30384,7 +30384,7 @@
       ],
       "fandoms": [
         "BanG Dream!",
-        "Gakuen Idolmaster",
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
         "Reverse: 1999",
         "Uma Musume"
       ],
@@ -30502,7 +30502,7 @@
         "Uma Musume"
       ],
       "fandoms": [
-        "Gakuen Idolmaster",
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
         "Uma Musume"
       ],
       "works_type": [
@@ -30727,7 +30727,7 @@
       ],
       "fandoms": [
         "BanG Dream!",
-        "Gakuen Idolmaster",
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
         "Hololive",
         "Honkai Star Rail",
         "Path to Nowhere",
@@ -30830,13 +30830,13 @@
         "Project Va-liv"
       ],
       "fandoms": [
-        "Hatsuboshi Gakuen",
-        "Project VA-Liv",
-        "The Idolm@ster",
-        "The Idolm@ster Cinderella Girls",
-        "The Idolm@ster Million Live!",
-        "The Idolm@ster Shiny Colors",
-        "The Idolm@ster SideM"
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
+        "Idolmaster",
+        "Idolmaster Million Live!",
+        "Idolmaster Shiny Colors",
+        "Idolmaster SideM",
+        "Idolmaster: Cinderella Girls",
+        "Project VA-Liv"
       ],
       "works_type": [
         "Comic",
@@ -30878,12 +30878,12 @@
         "Akebi's Sailor Uniform",
         "Arknights",
         "Encouragement of Climb",
+        "Idolmaster",
         "Onimai: I'm Now Your Sister!",
         "Pretty Cure",
         "PriPara",
         "Puella Magi Madoka Magica",
         "Takopi's Original Sin",
-        "The Idolm@ster",
         "Uma Musume",
         "Vocaloid"
       ],
@@ -30925,9 +30925,9 @@
       ],
       "fandoms": [
         "Honkai Star Rail",
+        "Idolmaster",
         "Project SEKAI",
         "Shangri-La Frontier",
-        "The Idolm@ster",
         "Tsukipro",
         "Uma Musume",
         "Vocaloid",
@@ -30980,7 +30980,7 @@
       "fandoms": [
         "A3!",
         "Ensemble Stars!",
-        "Gakuen Idolmaster",
+        "Gakuen Idolmaster (Hatsuboshi Gakuen)",
         "Hetalia",
         "Honkai Star Rail",
         "PriPara",
@@ -31021,8 +31021,8 @@
       ],
       "fandoms": [
         "Blue Archive",
+        "Idolmaster",
         "Project SEKAI",
-        "The Idolm@ster",
         "Uma Musume",
         "VTuber"
       ],
@@ -31312,7 +31312,7 @@
       ],
       "fandoms": [
         "Blue Archive",
-        "The Idolm@ster",
+        "Idolmaster",
         "Touhou",
         "Uma Musume"
       ],
@@ -32717,8 +32717,8 @@
         "Final Fantasy XIV",
         "Genshin Impact",
         "Gundam",
+        "Idolmaster SideM",
         "Megido 72",
-        "The Idolm@ster SideM",
         "Zeta Gundam"
       ],
       "works_type": [
@@ -38472,6 +38472,7 @@
         "GHM",
         "Guilty Gear",
         "Honkai Star Rail",
+        "Idolmaster",
         "Kamen Rider",
         "Kingdom Hearts",
         "Love and Deepspace",
@@ -38482,7 +38483,6 @@
         "Neon Genesis Evangelion",
         "Ni no Kuni",
         "Project Moon",
-        "The Idolm@ster",
         "Tokusatsu",
         "Touhou",
         "Uma Musume",
@@ -42864,17 +42864,25 @@
       "raw_fandoms": [
         "Vtuber",
         "Love And Deepspace",
-        "Vocaloid"
+        "Paradox Live"
       ],
       "fandoms": [
         "Love and Deepspace",
-        "Vocaloid",
+        "Paradox Live",
         "VTuber"
       ],
       "works_type": [
         "Goods"
       ],
-      "sampleworks_images": [],
+      "sampleworks_images": [
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/95df4a1b-63f7-4b84-8423-56448b45d2c2/L-18a.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/68a700e8-ad8e-4c0d-8f64-d2df6f40a0d1/L-18a.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/72be2b4e-245a-49d9-affc-63df0b126388/L-18a.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/b8d5291c-4f9c-413b-85e7-997b7d7c58aa/L-18a.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/869f60a9-c74e-492e-8e03-13074b840454/L-18a.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/78f0c3e2-cfde-48ea-9297-b50c0c5b5b35/L-18a.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/eb5b07b3-43fa-44dd-9a64-3d75201df40a/72ae63f1-1247-444e-8c43-7c2ff8fa738a/L-18a.png"
+      ],
       "circle_cut": "https://kumxjefxtrrpzalmwvvr.supabase.co/storage/v1/object/public/circle-cut-21/martabak_bulan.jpg",
       "circle_code": "L-18a"
     },
@@ -43200,11 +43208,11 @@
       ],
       "fandoms": [
         "Girls Band Cry",
+        "Idolmaster",
         "Orb",
         "Original",
         "Persona",
         "Shin Megami Tensei",
-        "The Idolm@ster",
         "Vocaloid",
         "VTuber"
       ],
@@ -45363,6 +45371,7 @@
         "Bocchi the Rock!",
         "Dandadan",
         "Hololive",
+        "Idolmaster",
         "Metaphor: ReFantazio",
         "MyGO!!!!!",
         "Nana",
@@ -45372,7 +45381,6 @@
         "Public Transportation",
         "Rhythm Games",
         "Splatoon",
-        "The Idolm@ster",
         "Uma Musume",
         "V.W.P",
         "Vocaloid"
@@ -58838,18 +58846,26 @@
       "raw_fandoms": [
         "Ensemble Stars",
         "Project Sekai",
-        "Harvest Moon"
+        "Umamusume",
+        "Detective Conan",
+        "Original"
       ],
       "fandoms": [
+        "Detective Conan",
         "Ensemble Stars!",
-        "Harvest Moon",
-        "Project SEKAI"
+        "Original",
+        "Project SEKAI",
+        "Uma Musume"
       ],
       "works_type": [
         "Goods",
         "Handmade Crafts"
       ],
-      "sampleworks_images": [],
+      "sampleworks_images": [
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/f4cbf564-6b7c-4668-afa9-1a98ce4329af/f3c6f60a-9b5e-43a6-8efe-77becbca663c/Q-31a (SUN).png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/f4cbf564-6b7c-4668-afa9-1a98ce4329af/4c43ecb2-eb68-4d54-b021-d8f7e9f1d12d/Q-31a (SUN).png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/f4cbf564-6b7c-4668-afa9-1a98ce4329af/de6c68f7-e6a7-44d8-84a7-ec3b46e40a3a/Q-31a (SUN).png"
+      ],
       "circle_cut": "https://kumxjefxtrrpzalmwvvr.supabase.co/storage/v1/object/public/circle-cut-21/zoss.jpg",
       "circle_code": "Q-31a (SUN)"
     },
@@ -59915,12 +59931,12 @@
       "day": "BOTH",
       "urls": [
         {
-          "title": "Twitter 1",
-          "url": "https://x.com/4riell"
+          "title": "Twitter",
+          "url": "https://x.com/fheuzel"
         },
         {
-          "title": "Twitter 2",
-          "url": "https://x.com/fheuzel"
+          "title": "Other",
+          "url": "https://x.com/4riell"
         }
       ],
       "raw_fandoms": [
@@ -59948,7 +59964,9 @@
         "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/e8e3e1fa-0e9f-475b-98b8-58a788f35205/Q-50ab.jpg",
         "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/8093757b-be32-4e92-a400-9b2132df0dfe/Q-50ab.png",
         "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/975b5445-5980-4fd7-99fc-ad468a373fd4/Q-50ab.jpg",
-        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/3eb867a0-e302-40ac-9397-3969cf1e54ca/Q-50ab.jpg"
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/3eb867a0-e302-40ac-9397-3969cf1e54ca/Q-50ab.jpg",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/84285d16-07b3-45f6-b0fb-d4fe941f8d7b/Q-50b.png",
+        "https://kumxjefxtrrpzalmwvvr.supabase.in/storage/v1/object/public/circle-sampleworks-21/73a1be20-ac58-4c5f-9e56-a5e93e68d967/c92f242d-837f-4ead-81b5-a0c9ebc6c132/Q-50b.png"
       ],
       "circle_cut": "https://kumxjefxtrrpzalmwvvr.supabase.co/storage/v1/object/public/circle-cut-21/pegalotak_pegalotot.jpg",
       "circle_code": "Q-50b"
