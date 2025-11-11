@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/creator.dart';
+import '../../services/creator_data_service.dart';
+import '../../utils/int_encoding.dart';
 import '../creator_detail_content.dart';
 import '../creator_list_view.dart';
 
@@ -162,6 +165,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
                 contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
               onChanged: _performSearch,
+              onSubmitted: _handleSearchSubmitted,
             ),
           ),
           // Show clear search button if search field is not empty
@@ -240,5 +244,195 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
     });
     
     _performSearch(query);
+  }
+
+  void _handleSearchSubmitted(String text) {
+    // Router function - delegates to specific handlers based on URL pattern
+    if (text.contains('?list=')) {
+      _handleListUrl(text);
+    } else if (text.contains('?creator_id=')) {
+      _handleCreatorIdUrl(text);
+    } else if (text.contains('?creator=')) {
+      _handleCreatorUrl(text);
+    } else if (text.contains('?custom_list=')) {
+      _handleCustomListUrl(text);
+    }
+  }
+
+  void _handleListUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the list query parameter
+      final listParam = uri.queryParameters['list'];
+      if (listParam == null || listParam.isEmpty) {
+        return; // No list parameter, fail silently
+      }
+
+      // Decode the compressed list
+      final idList = IntEncoding.stringCodeToInts(listParam);
+      if (idList.isEmpty) {
+        return; // Empty or invalid list, fail silently
+      }
+
+      // Set creator custom list with specified flags
+      final creatorProvider = context.read<CreatorDataProvider>();
+      creatorProvider.setCreatorCustomList(
+        idList,
+        showAddAllToFavorites: true,
+        shouldRefreshOnReturn: false,
+      );
+
+      // Clear search controller only on success
+      _searchController.clear();
+      _performSearch('');
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
+  void _handleCreatorIdUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the creator_id query parameter
+      final creatorIdParam = uri.queryParameters['creator_id'];
+      if (creatorIdParam == null || creatorIdParam.isEmpty) {
+        return; // No creator_id parameter, fail silently
+      }
+
+      // Parse creator ID
+      final creatorId = int.tryParse(creatorIdParam);
+      if (creatorId == null) {
+        return; // Invalid creator ID, fail silently
+      }
+
+      // Get creator by ID
+      final creatorProvider = context.read<CreatorDataProvider>();
+      final creator = creatorProvider.getCreatorById(creatorId);
+      if (creator == null) {
+        return; // Creator not found, fail silently
+      }
+
+      // Select the creator
+      widget.onCreatorSelected(creator);
+
+      // Clear search controller only on success
+      _searchController.clear();
+      _performSearch('');
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
+  void _handleCreatorUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the creator query parameter
+      final creatorParam = uri.queryParameters['creator'];
+      if (creatorParam == null || creatorParam.isEmpty) {
+        return; // No creator parameter, fail silently
+      }
+
+      // Decode and normalize name (replace + with space, trim)
+      final searchName = Uri.decodeComponent(creatorParam.replaceAll('+', ' ')).trim().toLowerCase();
+      if (searchName.isEmpty) {
+        return; // Empty search name, fail silently
+      }
+
+      // Get all creators from provider
+      final creatorProvider = context.read<CreatorDataProvider>();
+      final creators = creatorProvider.creators;
+      if (creators == null || creators.isEmpty) {
+        return; // No creators available, fail silently
+      }
+
+      // Find creator by name (case-insensitive, partial match)
+      Creator? creator;
+      try {
+        creator = creators.firstWhere(
+          (c) => c.name.toLowerCase().contains(searchName),
+          orElse: () => creators.firstWhere(
+            (c) => c.name.toLowerCase() == searchName,
+            orElse: () => creators.first, // fallback, won't be used if null check below
+          ),
+        );
+        
+        // Only select if we found a match
+        if (!creator.name.toLowerCase().contains(searchName)) {
+          return; // No match found, fail silently
+        }
+      } catch (e) {
+        return; // No match found, fail silently
+      }
+
+      // Select the creator
+      widget.onCreatorSelected(creator);
+
+      // Clear search controller only on success
+      _searchController.clear();
+      _performSearch('');
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
+  void _handleCustomListUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the custom_list query parameter
+      final customListParam = uri.queryParameters['custom_list'];
+      if (customListParam == null || customListParam.isEmpty) {
+        return; // No custom_list parameter, fail silently
+      }
+
+      // Parse comma-separated creator IDs
+      final idStrings = customListParam.split(',');
+      final idList = idStrings
+          .map((idStr) => int.tryParse(idStr.trim()))
+          .where((id) => id != null)
+          .cast<int>()
+          .toList();
+
+      if (idList.isEmpty) {
+        return; // Empty or invalid list, fail silently
+      }
+
+      // Set creator custom list with specified flags
+      final creatorProvider = context.read<CreatorDataProvider>();
+      creatorProvider.setCreatorCustomList(
+        idList,
+        showAddAllToFavorites: true,
+        shouldRefreshOnReturn: false,
+      );
+
+      // Clear search controller only on success
+      _searchController.clear();
+      _performSearch('');
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
   }
 }

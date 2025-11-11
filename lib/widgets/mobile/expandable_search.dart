@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/creator.dart';
+import '../../services/creator_data_service.dart';
+import '../../utils/int_encoding.dart';
 import '../creator_list_view.dart';
 
 class ExpandableSearch extends StatefulWidget {
@@ -37,7 +40,7 @@ class ExpandableSearchState extends State<ExpandableSearch> {
   @override
   void initState() {
     super.initState();
-    
+
     // Listen to focus changes to expand (but not collapse)
     _focusNode.addListener(() {
       if (mounted && !_isExpanded && _focusNode.hasFocus) {
@@ -51,7 +54,7 @@ class ExpandableSearchState extends State<ExpandableSearch> {
   @override
   void didUpdateWidget(ExpandableSearch oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Reset search when detail sheet is closed (selectedCreator becomes null)
     if (oldWidget.selectedCreator != null && widget.selectedCreator == null) {
       setState(() {
@@ -71,7 +74,6 @@ class ExpandableSearchState extends State<ExpandableSearch> {
   void _performSearch(String query) {
     _searchScrollController.jumpTo(0);
   }
-
 
   void _collapse() {
     _focusNode.unfocus();
@@ -93,11 +95,212 @@ class ExpandableSearchState extends State<ExpandableSearch> {
     widget.onClear?.call();
   }
 
+  void _handleSearchSubmitted(String text) {
+    // Router function - delegates to specific handlers based on URL pattern
+    if (text.contains('?list=')) {
+      _handleListUrl(text);
+    } else if (text.contains('?creator_id=')) {
+      _handleCreatorIdUrl(text);
+    } else if (text.contains('?creator=')) {
+      _handleCreatorUrl(text);
+    } else if (text.contains('?custom_list=')) {
+      _handleCustomListUrl(text);
+    }
+  }
+
+  void _handleListUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the list query parameter
+      final listParam = uri.queryParameters['list'];
+      if (listParam == null || listParam.isEmpty) {
+        return; // No list parameter, fail silently
+      }
+
+      // Decode the compressed list
+      final idList = IntEncoding.stringCodeToInts(listParam);
+      if (idList.isEmpty) {
+        return; // Empty or invalid list, fail silently
+      }
+
+      // Set creator custom list with specified flags
+      final creatorProvider = context.read<CreatorDataProvider>();
+      creatorProvider.setCreatorCustomList(
+        idList,
+        showAddAllToFavorites: true,
+        shouldRefreshOnReturn: false,
+      );
+
+      // Clear search controller only on success
+      setState(() {
+        _searchController.clear();
+      });
+      _collapse();
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
+  void _handleCreatorIdUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the creator_id query parameter
+      final creatorIdParam = uri.queryParameters['creator_id'];
+      if (creatorIdParam == null || creatorIdParam.isEmpty) {
+        return; // No creator_id parameter, fail silently
+      }
+
+      // Parse creator ID
+      final creatorId = int.tryParse(creatorIdParam);
+      if (creatorId == null) {
+        return; // Invalid creator ID, fail silently
+      }
+
+      // Get creator by ID
+      final creatorProvider = context.read<CreatorDataProvider>();
+      final creator = creatorProvider.getCreatorById(creatorId);
+      if (creator == null) {
+        return; // Creator not found, fail silently
+      }
+
+      // Select the creator
+      widget.onCreatorSelected(creator);
+
+      // Clear search controller only on success
+      setState(() {
+        _searchController.clear();
+      });
+      _collapse();
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
+  void _handleCreatorUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the creator query parameter
+      final creatorParam = uri.queryParameters['creator'];
+      if (creatorParam == null || creatorParam.isEmpty) {
+        return; // No creator parameter, fail silently
+      }
+
+      // Decode and normalize name (replace + with space, trim)
+      final searchName = Uri.decodeComponent(creatorParam.replaceAll('+', ' '))
+          .trim()
+          .toLowerCase();
+      if (searchName.isEmpty) {
+        return; // Empty search name, fail silently
+      }
+
+      // Get all creators from provider
+      final creatorProvider = context.read<CreatorDataProvider>();
+      final creators = creatorProvider.creators;
+      if (creators == null || creators.isEmpty) {
+        return; // No creators available, fail silently
+      }
+
+      // Find creator by name (case-insensitive, partial match)
+      Creator? creator;
+      try {
+        creator = creators.firstWhere(
+          (c) => c.name.toLowerCase().contains(searchName),
+          orElse: () => creators.firstWhere(
+            (c) => c.name.toLowerCase() == searchName,
+            orElse: () =>
+                creators.first, // fallback, won't be used if null check below
+          ),
+        );
+
+        // Only select if we found a match
+        if (!creator.name.toLowerCase().contains(searchName)) {
+          return; // No match found, fail silently
+        }
+      } catch (e) {
+        return; // No match found, fail silently
+      }
+
+      // Select the creator
+      widget.onCreatorSelected(creator);
+
+      // Clear search controller only on success
+      setState(() {
+        _searchController.clear();
+      });
+      _collapse();
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
+  void _handleCustomListUrl(String text) {
+    try {
+      // Parse the URL
+      final uri = Uri.tryParse(text);
+      if (uri == null) {
+        return; // Invalid URL, fail silently
+      }
+
+      // Extract the custom_list query parameter
+      final customListParam = uri.queryParameters['custom_list'];
+      if (customListParam == null || customListParam.isEmpty) {
+        return; // No custom_list parameter, fail silently
+      }
+
+      // Parse comma-separated creator IDs
+      final idStrings = customListParam.split(',');
+      final idList = idStrings
+          .map((idStr) => int.tryParse(idStr.trim()))
+          .where((id) => id != null)
+          .cast<int>()
+          .toList();
+
+      if (idList.isEmpty) {
+        return; // Empty or invalid list, fail silently
+      }
+
+      // Set creator custom list with specified flags
+      final creatorProvider = context.read<CreatorDataProvider>();
+      creatorProvider.setCreatorCustomList(
+        idList,
+        showAddAllToFavorites: true,
+        shouldRefreshOnReturn: false,
+      );
+
+      // Clear search controller only on success
+      setState(() {
+        _searchController.clear();
+      });
+      _collapse();
+    } catch (e) {
+      // Fail silently on any error
+      return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -106,11 +309,11 @@ class ExpandableSearchState extends State<ExpandableSearch> {
           child: IgnorePointer(
             ignoring: !_isExpanded,
             child: AnimatedOpacity(
-          opacity: _isExpanded ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 200),
-          child: Container(
-            color: theme.colorScheme.surface,
-            child: SafeArea(
+              opacity: _isExpanded ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                color: theme.colorScheme.surface,
+                child: SafeArea(
                   child: Column(
                     children: [
                       const SizedBox(height: 80), // Space for search bar
@@ -146,32 +349,32 @@ class ExpandableSearchState extends State<ExpandableSearch> {
             ),
           ),
         ),
-        
+
         // Search bar (always on top)
         Positioned(
           left: 0,
           right: 0,
           top: 0,
           child: SafeArea(
-            child:         Container(
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            // White search bar in light mode, dark neutral in dark mode
-            color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.08),
-                blurRadius: 8,
-                spreadRadius: 1,
-                offset: const Offset(0, 2),
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                // White search bar in light mode, dark neutral in dark mode
+                color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                  width: 0.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.08),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
               child: Row(
                 children: [
                   if (_isExpanded)
@@ -199,9 +402,11 @@ class ExpandableSearchState extends State<ExpandableSearch> {
                           decoration: const InputDecoration(
                             hintText: 'Search name, booth, or fandom...',
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
                           ),
                           onChanged: _performSearch,
+                          onSubmitted: _handleSearchSubmitted,
                         ),
                       ),
                     ),
@@ -211,7 +416,10 @@ class ExpandableSearchState extends State<ExpandableSearch> {
                     builder: (context, value, _) {
                       if (value.text.isNotEmpty || widget.onClear != null) {
                         return IconButton(
-                          icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
+                          icon: Icon(Icons.close,
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
+                              size: 20),
                           onPressed: _handleClear,
                         );
                       } else {
@@ -227,6 +435,4 @@ class ExpandableSearchState extends State<ExpandableSearch> {
       ],
     );
   }
-
 }
-
