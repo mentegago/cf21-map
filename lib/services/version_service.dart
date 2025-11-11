@@ -23,7 +23,7 @@ class VersionInfo {
 
 class VersionService {
   static const String _versionUrl = 'https://cf21-config.nnt.gg/version.json';
-  static const int _clientVersion = 32; // Current client version
+  static const int _clientVersion = 33; // Current client version
 
   static Future<VersionInfo?> fetchVersionInfo() async {
     try {
@@ -34,9 +34,7 @@ class VersionService {
         },
       );
 
-      final response = await http.get(
-        uri
-      ).timeout(const Duration(seconds: 10));
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body) as Map<String, dynamic>;
